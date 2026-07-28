@@ -28,6 +28,17 @@ require the `checks` status to pass before merge.
    OTP (passwordless). Disable email confirmations that would block the
    magic-link flow if you see a separate “confirm signup” toggle that
    conflicts — for OTP-only, magic link is enough.
+3b. **Google sign-in**:
+   - [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+     → Create credentials → OAuth client ID → Web application.
+   - Authorized redirect URI:
+     `https://<project-ref>.supabase.co/auth/v1/callback`.
+   - Copy the Client ID and Client secret into Supabase Dashboard →
+     **Authentication → Providers → Google** → enable → paste both → Save.
+   - Local testing: copy `supabase/.env.example` to `supabase/.env`, fill in
+     the same Client ID/secret, then run `supabase start --env-file supabase/.env`
+     (the redirect URI for local dev is `http://127.0.0.1:54321/auth/v1/callback`,
+     already wired in `supabase/config.toml`).
 4. **Authentication → URL configuration**:
    - Site URL: your Vercel production URL (e.g. `https://your-app.vercel.app`)
    - Redirect URLs: add
@@ -68,7 +79,8 @@ read; authenticated write under `{userId}/…`).
 
 ## 5. Smoke-test the happy path
 
-1. Open production URL → **Sign in** → receive magic link → land signed in.
+1. Open production URL → **Sign in** → **Continue with Google** (or receive
+   a magic link by email) → land signed in.
 2. **Sell** → upload bouquet photos → AI analysis → set price → publish.
 3. Confirm the listing appears on Browse with a Storage photo URL
    (not a multi-kilobyte data URL).
@@ -84,3 +96,5 @@ npm run dev
 ```
 
 Leave Supabase vars empty to stay in demo mode (CI and default local).
+Demo listings also load into local Supabase via `supabase/seed.sql` on
+`supabase db reset` (same Amsterdam set as the in-memory demo).

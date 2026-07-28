@@ -1,0 +1,11 @@
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# Real local OAuth secrets — keep .env.example tracked, not the filled-in copy.
+.env

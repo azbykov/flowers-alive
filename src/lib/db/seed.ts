@@ -1,4 +1,5 @@
 import type { Listing } from "@/domain/types";
+import { bouquetPlaceholderUrl } from "@/lib/placeholder/bouquetSvg";
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
 
@@ -14,7 +15,7 @@ export function seedListings(): Listing[] {
       priceCents: 800,
       currency: "EUR",
       flowerTypes: ["roses"],
-      photos: [{ id: "p1", src: "/seed/roses.svg", position: 0 }],
+      photos: [{ id: "p1", src: bouquetPlaceholderUrl("roses", "seed-roses-jordaan", "pink"), position: 0 }],
       freshness: {
         score: 94,
         remainingDaysMin: 5,
@@ -48,7 +49,7 @@ export function seedListings(): Listing[] {
       priceCents: 500,
       currency: "EUR",
       flowerTypes: ["tulips"],
-      photos: [{ id: "p1", src: "/seed/tulips.svg", position: 0 }],
+      photos: [{ id: "p1", src: bouquetPlaceholderUrl("tulips", "seed-tulips-pijp", "yellow"), position: 0 }],
       freshness: {
         score: 97,
         remainingDaysMin: 6,
@@ -82,7 +83,7 @@ export function seedListings(): Listing[] {
       priceCents: 600,
       currency: "EUR",
       flowerTypes: ["peonies"],
-      photos: [{ id: "p1", src: "/seed/peonies.svg", position: 0 }],
+      photos: [{ id: "p1", src: bouquetPlaceholderUrl("peonies", "seed-peonies-oudwest", "pink"), position: 0 }],
       freshness: {
         score: 68,
         remainingDaysMin: 2,
@@ -116,7 +117,7 @@ export function seedListings(): Listing[] {
       priceCents: 1000,
       currency: "EUR",
       flowerTypes: ["mixed", "roses", "lilies", "chrysanthemums"],
-      photos: [{ id: "p1", src: "/seed/mixed.svg", position: 0 }],
+      photos: [{ id: "p1", src: bouquetPlaceholderUrl("mixed", "seed-mixed-centrum"), position: 0 }],
       freshness: {
         score: 82,
         remainingDaysMin: 4,
@@ -154,7 +155,7 @@ export function seedListings(): Listing[] {
       priceCents: 300,
       currency: "EUR",
       flowerTypes: ["hydrangeas"],
-      photos: [{ id: "p1", src: "/seed/hydrangeas.svg", position: 0 }],
+      photos: [{ id: "p1", src: bouquetPlaceholderUrl("hydrangeas", "seed-hydrangeas-oost", "blue"), position: 0 }],
       freshness: {
         score: 55,
         remainingDaysMin: 1,
@@ -187,7 +188,7 @@ export function seedListings(): Listing[] {
       priceCents: 450,
       currency: "EUR",
       flowerTypes: ["sunflowers"],
-      photos: [{ id: "p1", src: "/seed/sunflowers.svg", position: 0 }],
+      photos: [{ id: "p1", src: bouquetPlaceholderUrl("sunflowers", "seed-sunflowers-noord"), position: 0 }],
       freshness: {
         score: 90,
         remainingDaysMin: 5,

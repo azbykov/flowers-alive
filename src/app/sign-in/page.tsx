@@ -6,9 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
+import { GoogleIcon } from "@/components/ui/GoogleIcon";
 
 /**
- * Magic-link sign-in. One email field — no password.
+ * Sign-in with Google (one tap) or a magic-link email — no passwords.
  * In demo mode (no Supabase) this page just explains that sign-in is skipped.
  */
 function SignInForm() {
@@ -17,7 +18,37 @@ function SignInForm() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState(() =>
+    searchParams.get("error") ? "That sign-in link expired or was already used — try again." : "",
+  );
+
+  function callbackUrl() {
+    const redirect = new URL("/auth/callback", window.location.origin);
+    redirect.searchParams.set("next", next);
+    return redirect.toString();
+  }
+
+  async function onGoogleSignIn() {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: callbackUrl() },
+      });
+      if (oauthError) {
+        setError(oauthError.message);
+        setGoogleLoading(false);
+      }
+      // On success the browser navigates to Google — no need to reset loading.
+    } catch {
+      setError("Could not start Google sign-in — try again in a moment.");
+      setGoogleLoading(false);
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,12 +57,10 @@ function SignInForm() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const redirect = new URL("/auth/callback", window.location.origin);
-      redirect.searchParams.set("next", next);
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: redirect.toString(),
+          emailRedirectTo: callbackUrl(),
         },
       });
       if (signInError) {
@@ -65,8 +94,15 @@ function SignInForm() {
     <main className="mx-auto max-w-[480px] px-4 pb-16 pt-10">
       <h1 className="font-display text-[28px] font-medium">Sign in</h1>
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-        We&apos;ll email you a magic link — no password to remember.
+        Continue with Google, or we&apos;ll email you a magic link — no
+        password to remember.
       </p>
+
+      {!sent && error && (
+        <p className="mt-6 rounded-xl bg-petal-tint px-4 py-3 text-[13px]">
+          {error}
+        </p>
+      )}
 
       {sent ? (
         <div className="mt-8 rounded-2xl border border-[#dbead9] bg-[#f2f7ef] p-5">
@@ -79,31 +115,48 @@ function SignInForm() {
           </p>
         </div>
       ) : (
-        <form onSubmit={(e) => void onSubmit(e)} className="mt-6 space-y-4">
-          {error && (
-            <p className="rounded-xl bg-petal-tint px-4 py-3 text-[13px]">
-              {error}
-            </p>
-          )}
-          <Field label="Email">
-            <TextInput
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-          </Field>
+        <>
           <Button
-            type="submit"
+            type="button"
+            variant="secondary"
             fullWidth
-            loading={loading}
-            className="!h-14 !rounded-2xl !text-base"
+            loading={googleLoading}
+            onClick={() => void onGoogleSignIn()}
+            className="mt-6 !h-14 !rounded-2xl !text-base"
           >
-            Email me a link
+            <GoogleIcon />
+            Continue with Google
           </Button>
-        </form>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-line" />
+            <span className="text-[12px] font-medium uppercase tracking-wide text-ink-soft">
+              or with email
+            </span>
+            <div className="h-px flex-1 bg-line" />
+          </div>
+
+          <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
+            <Field label="Email">
+              <TextInput
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </Field>
+            <Button
+              type="submit"
+              fullWidth
+              loading={loading}
+              className="!h-14 !rounded-2xl !text-base"
+            >
+              Email me a link
+            </Button>
+          </form>
+        </>
       )}
     </main>
   );

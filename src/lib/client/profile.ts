@@ -143,11 +143,23 @@ export function useAuthProfile(): {
       .select("display_name, contact")
       .eq("id", user.id)
       .maybeSingle();
+    // First login (e.g. via Google): seed the profile row with the name the
+    // provider already gave us, so there's nothing to type before selling.
+    const metadataName =
+      (user.user_metadata?.full_name as string | undefined) ??
+      (user.user_metadata?.name as string | undefined) ??
+      "";
     const next: Profile = {
       id: user.id,
-      displayName: row?.display_name ?? "",
+      displayName: row?.display_name ?? metadataName,
       contact: row?.contact ?? "",
     };
+    if (!row && metadataName) {
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        display_name: metadataName,
+      });
+    }
     cache = next;
     setAuthState({ profile: next, loading: false, signedIn: true });
     window.dispatchEvent(new Event(CHANGE_EVENT));
