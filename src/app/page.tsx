@@ -1,65 +1,236 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import type {
+  Coordinates,
+  FlowerType,
+  PickupMethod,
+  PublicListing,
+  SortKey,
+} from "@/domain/types";
+import { FLOWER_LABELS, FLOWER_TYPES, PICKUP_LABELS, PICKUP_METHODS } from "@/domain/types";
+import { getViewerLocation } from "@/lib/client/location";
+import { BouquetCard } from "@/components/listing/BouquetCard";
+import { Chip } from "@/components/ui/Chip";
+import { Select, TextInput } from "@/components/ui/Field";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Spinner } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "distance", label: "Distance" },
+  { value: "freshness", label: "Freshness" },
+  { value: "newest", label: "Newest" },
+  { value: "price", label: "Price" },
+];
+
+function SortModal({
+  sort,
+  onPick,
+  onClose,
+}: {
+  sort: SortKey;
+  onPick: (s: SortKey) => void;
+  onClose: () => void;
+}) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div
+      className="fixed inset-0 z-60 flex items-center justify-center bg-[rgba(28,24,21,0.4)] p-6"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[380px] animate-[slfrise_.2s_ease-out] rounded-[20px] bg-surface px-6 pb-4 pt-5 shadow-[0_30px_70px_-20px_rgba(42,36,30,0.4)]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Sort by"
+      >
+        <div className="mb-3 font-display text-[21px] text-ink">Sort by</div>
+        {SORT_OPTIONS.map((o) => (
+          <button
+            key={o.value}
+            onClick={() => onPick(o.value)}
+            className="flex w-full items-center justify-between border-b border-hairline px-1 py-[15px]"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <span
+              className={`text-[15.5px] text-ink ${sort === o.value ? "font-bold" : "font-medium"}`}
+            >
+              {o.label}
+            </span>
+            {sort === o.value && (
+              <span className="text-lg text-stem" aria-hidden>
+                ✓
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
+  );
+}
+
+export default function BrowsePage() {
+  const [viewer, setViewer] = useState<Coordinates | null>(null);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("distance");
+  const [showSort, setShowSort] = useState(false);
+  const [flowerType, setFlowerType] = useState<FlowerType | null>(null);
+  const [pickup, setPickup] = useState<PickupMethod | null>(null);
+  const [freshOnly, setFreshOnly] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [listings, setListings] = useState<PublicListing[] | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    void getViewerLocation().then(setViewer);
+  }, []);
+
+  const load = useCallback(async () => {
+    const params = new URLSearchParams({ sort });
+    if (viewer) {
+      params.set("lat", String(viewer.lat));
+      params.set("lng", String(viewer.lng));
+    }
+    if (query.trim()) params.set("q", query.trim());
+    if (flowerType) params.set("flowerType", flowerType);
+    if (pickup) params.set("pickup", pickup);
+    if (freshOnly) params.set("minFreshness", "80");
+    if (maxPrice !== null) params.set("maxPrice", String(maxPrice));
+    const res = await fetch(`/api/listings?${params}`);
+    const data = (await res.json()) as { listings: PublicListing[] };
+    setListings(data.listings);
+  }, [viewer, query, sort, flowerType, pickup, freshOnly, maxPrice]);
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => void load(), query ? 250 : 0);
+    return () => clearTimeout(debounceRef.current);
+  }, [load, query]);
+
+  const searching = query.trim().length > 0;
+  const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Distance";
+
+  return (
+    <main className="mx-auto max-w-2xl px-4 pt-6 lg:max-w-[1240px] lg:px-8 lg:pt-0">
+      {/* Mobile header */}
+      <header className="lg:hidden">
+        <h1 className="font-display text-2xl font-medium tracking-tight">
+          Second Life Flowers
+        </h1>
+        <p className="mt-1 text-[13px] text-ink-soft">
+          Fresh bouquets looking for a new home near you
+        </p>
+      </header>
+
+      {/* Desktop header */}
+      <div className="hidden flex-wrap items-end justify-between gap-6 pb-6 pt-10 lg:flex">
+        <div>
+          <div className="text-[13px] font-semibold text-ink-soft">
+            {searching ? "Search results" : "Nearby"}
+          </div>
+          <h1 className="mt-1 font-display text-[38px] font-medium leading-[1.05] text-ink">
+            {searching ? "Bouquets near you" : "Fresh today"}
+          </h1>
+        </div>
+        <div className="flex items-center gap-5">
+          {listings !== null && (
+            <span className="text-sm text-ink-soft">
+              {listings.length} bouquets nearby
+            </span>
+          )}
+          <button
+            onClick={() => setShowSort(true)}
+            className="flex h-11 items-center gap-2 rounded-xl border border-line bg-card px-4 text-sm font-bold text-ink"
+          >
+            Sort: {sortLabel} <span className="text-faint">▾</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 lg:mt-0 lg:max-w-[420px]">
+        <TextInput
+          type="search"
+          placeholder="Search roses, tulips, neighborhoods…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search bouquets"
+        />
+      </div>
+
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:gap-2.5 lg:pb-7 lg:pt-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          aria-label="Sort listings"
+          className="!h-9 !w-auto shrink-0 rounded-full !px-3 text-[13px] lg:hidden"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Chip
+          label="Fresh 80%+"
+          selected={freshOnly}
+          onClick={() => setFreshOnly((v) => !v)}
+        />
+        <Chip
+          label="Under €7"
+          selected={maxPrice !== null}
+          onClick={() => setMaxPrice((v) => (v === null ? 7 : null))}
+        />
+        {PICKUP_METHODS.map((method) => (
+          <Chip
+            key={method}
+            label={PICKUP_LABELS[method]}
+            selected={pickup === method}
+            onClick={() => setPickup((v) => (v === method ? null : method))}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 lg:mt-0 lg:flex-wrap lg:gap-2.5 lg:pb-7 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {FLOWER_TYPES.filter((t) => t !== "other").map((type) => (
+          <Chip
+            key={type}
+            label={FLOWER_LABELS[type]}
+            selected={flowerType === type}
+            onClick={() => setFlowerType((v) => (v === type ? null : type))}
+          />
+        ))}
+      </div>
+
+      {listings === null ? (
+        <div className="flex justify-center py-20 text-stem">
+          <Spinner size={28} />
+        </div>
+      ) : listings.length === 0 ? (
+        <EmptyState
+          message="No bouquets nearby yet — be the first to share one."
+          action={
+            <Link href="/sell">
+              <Button>Sell a bouquet</Button>
+            </Link>
+          }
+        />
+      ) : (
+        <div className="mt-4 grid grid-cols-1 gap-3 pb-14 min-[400px]:grid-cols-2 md:grid-cols-3 lg:mt-0 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-8">
+          {listings.map((listing) => (
+            <BouquetCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      )}
+
+      {showSort && (
+        <SortModal
+          sort={sort}
+          onPick={(s) => {
+            setSort(s);
+            setShowSort(false);
+          }}
+          onClose={() => setShowSort(false)}
+        />
+      )}
+    </main>
   );
 }

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="cursor:pointer;display:flex;flex-direction:column;gap:10px;font-family:'Hanken Grotesk',sans-serif" onClick="{{ onOpen }}">
+  <div style="position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:{{ photoBg }};box-shadow:0 1px 2px rgba(42,36,30,0.06)">
+    <div style="position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,0.92);backdrop-filter:blur(4px)">
+      <span style="width:7px;height:7px;border-radius:999px;background:{{ freshColor }}"></span>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:{{ freshColor }};letter-spacing:-0.3px">{{ freshness }}%</span>
+    </div>
+    <button onClick="{{ onFav }}" style="position:absolute;top:8px;right:8px;width:34px;height:34px;border:none;border-radius:999px;background:rgba(255,255,255,0.92);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;line-height:1;padding:0">
+      <sc-if value="{{ faved }}" hint-placeholder-val="{{ false }}"><span style="color:#c2557a">&#10084;</span></sc-if>
+      <sc-if value="{{ notFaved }}" hint-placeholder-val="{{ true }}"><span style="color:#b0a89e">&#9825;</span></sc-if>
+    </button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:3px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+      <span style="font-family:'Newsreader',serif;font-size:17px;font-weight:500;color:#2a241e;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ title }}</span>
+      <span style="font-size:15px;font-weight:700;color:#2a241e;white-space:nowrap">{{ price }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#8b8177">
+      <span>{{ neighborhood }}</span>
+      <span style="width:3px;height:3px;border-radius:999px;background:#cfc6ba"></span>
+      <span>{{ distance }}</span>
+      <span style="width:3px;height:3px;border-radius:999px;background:#cfc6ba"></span>
+      <span style="color:{{ freshColor }}">{{ remaining }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:180,&quot;height&quot;:230},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Blush Garden Roses&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;price&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;$18&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;neighborhood&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Riverside&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;distance&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;1.2 km&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;freshness&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:92,&quot;tsType&quot;:&quot;number&quot;},&quot;freshColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3f7d52&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;remaining&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;5\u20136 days&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;photoBg&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;faved&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;notFaved&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onOpen&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onFav&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}"></script>
+</body>
+</html>

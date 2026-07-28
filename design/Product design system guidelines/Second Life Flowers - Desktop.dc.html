@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hanken Grotesk',sans-serif;-webkit-font-smoothing:antialiased;background:#fdfbf7}
+  a{color:#d98324;text-decoration:none}
+  a:hover{color:#be6e14}
+  @keyframes slfspin{to{transform:rotate(360deg)}}
+  @keyframes slfrise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes slfpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh;width:100%;background:#fdfbf7;font-family:'Hanken Grotesk',sans-serif;display:flex;flex-direction:column">
+
+  <!-- ============ TOP NAV ============ -->
+  <div style="position:sticky;top:0;z-index:50;background:rgba(253,251,247,0.9);backdrop-filter:blur(14px);border-bottom:1px solid #ece5da">
+    <div style="max-width:1240px;margin:0 auto;height:72px;padding:0 32px;display:flex;align-items:center;gap:28px">
+      <div onClick="{{ goHome }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0">
+        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(150deg,#d98324,#c0561f);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Newsreader',serif;font-size:19px;font-weight:500">S</div>
+        <span style="font-family:'Newsreader',serif;font-size:19px;font-weight:500;color:#2a241e;line-height:1;white-space:nowrap">Second Life<br><span style="font-size:12px;color:#8b8177">Flowers</span></span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:4px">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="3">
+          <button onClick="{{ n.go }}" style="border:none;background:{{ n.bg }};color:{{ n.fg }};padding:9px 16px;border-radius:11px;font-size:14.5px;font-weight:{{ n.weight }};cursor:pointer;font-family:'Hanken Grotesk',sans-serif">{{ n.label }}</button>
+        </sc-for>
+      </div>
+
+      <div onClick="{{ goSearch }}" style="flex:1;max-width:360px;height:44px;border:1px solid #ece5da;border-radius:12px;background:#fff;display:flex;align-items:center;gap:10px;padding:0 14px;cursor:pointer">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="#b0a89e" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><path d="M12.5 12.5L16 16" stroke-linecap="round"/></svg>
+        <span style="font-size:14.5px;color:#b0a89e;white-space:nowrap">Search bouquets nearby&#8230;</span>
+      </div>
+
+      <div style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-shrink:0">
+        <button onClick="{{ goMessages }}" style="width:44px;height:44px;border:1px solid #ece5da;border-radius:12px;background:#fff;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2a241e" stroke-width="1.6"><path d="M4 4h12a1 1 0 011 1v8a1 1 0 01-1 1H8l-4 3V5a1 1 0 011-1z" stroke-linejoin="round"/></svg>
+          <span style="position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:999px;background:#c0492f;border:2px solid #fff"></span>
+        </button>
+        <button onClick="{{ goSaved }}" style="width:44px;height:44px;border:1px solid #ece5da;border-radius:12px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2a241e" stroke-width="1.7" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-9.5A3.5 3.5 0 0112 7a3.5 3.5 0 017 3.5C19 15.4 12 20 12 20z"/></svg>
+        </button>
+        <button onClick="{{ startCreate }}" style="height:44px;padding:0 18px;border:none;border-radius:12px;background:#d98324;color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:'Hanken Grotesk',sans-serif;box-shadow:0 6px 16px -6px rgba(217,131,36,0.7)">
+          <svg width="18" height="18" viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M13 6v14M6 13h14"/></svg>Sell flowers
+        </button>
+        <button onClick="{{ goProfile }}" style="width:44px;height:44px;border:none;border-radius:999px;background:linear-gradient(140deg,#d98324,#c0561f);color:#fff;font-family:'Newsreader',serif;font-size:17px;cursor:pointer">M</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONTENT ============ -->
+  <div style="flex:1;max-width:1240px;width:100%;margin:0 auto;padding:0 32px">
+
+    <!-- ===== HOME / SEARCH (browse grid) ===== -->
+    <sc-if value="{{ is.browse }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:40px 0 24px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;color:#8b8177;font-weight:600">{{ browseKicker }}</div>
+          <div style="font-family:'Newsreader',serif;font-size:38px;font-weight:500;color:#2a241e;line-height:1.05;margin-top:4px">{{ browseTitle }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <span style="font-size:14px;color:#8b8177">{{ resultCount }} bouquets nearby</span>
+          <button onClick="{{ openSort }}" style="height:44px;padding:0 16px;border:1px solid #ece5da;border-radius:12px;background:#fff;cursor:pointer;font-size:14px;font-weight:700;color:#2a241e;display:flex;align-items:center;gap:8px;font-family:'Hanken Grotesk',sans-serif">Sort: {{ sortBy }} <span style="color:#b0a89e">&#9662;</span></button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;padding-bottom:28px;flex-wrap:wrap">
+        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.pick }}" style="padding:9px 16px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};font-size:14px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">{{ c.label }}</button></sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px 24px;padding-bottom:56px">
+        <sc-for list="{{ feed }}" as="l" hint-placeholder-count="8">
+          <dc-import name="BouquetCard" title="{{ l.title }}" price="{{ l.price }}" neighborhood="{{ l.neighborhood }}" distance="{{ l.distanceLabel }}" freshness="{{ l.freshness }}" fresh-color="{{ l.freshColor }}" remaining="{{ l.remaining }}" photo-bg="{{ l.photoBg }}" faved="{{ l.faved }}" not-faved="{{ l.notFaved }}" on-open="{{ l.open }}" on-fav="{{ l.fav }}" hint-size="100%,290px"></dc-import>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ===== SAVED ===== -->
+    <sc-if value="{{ is.saved }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:40px 0 24px"><div style="font-family:'Newsreader',serif;font-size:38px;font-weight:500;color:#2a241e">Saved</div><div style="font-size:14px;color:#8b8177;margin-top:4px">{{ savedCount }} bouquets you&#8217;re watching</div></div>
+      <sc-if value="{{ favEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:80px 0;text-align:center;display:flex;flex-direction:column;align-items:center">
+          <div style="width:90px;height:90px;border-radius:999px;background:#faf6ef;display:flex;align-items:center;justify-content:center;font-size:36px;color:#d9c9b0">&#9825;</div>
+          <div style="font-family:'Newsreader',serif;font-size:24px;color:#2a241e;margin-top:20px">Nothing saved yet</div>
+          <div style="font-size:15px;color:#8b8177;margin-top:8px">Tap the heart on any bouquet to keep an eye on it here.</div>
+          <button onClick="{{ goHome }}" style="margin-top:22px;height:48px;padding:0 24px;border:none;border-radius:14px;background:#d98324;color:#fff;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Browse bouquets</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ favNotEmpty }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px 24px;padding-bottom:56px">
+          <sc-for list="{{ favList }}" as="l" hint-placeholder-count="3">
+            <dc-import name="BouquetCard" title="{{ l.title }}" price="{{ l.price }}" neighborhood="{{ l.neighborhood }}" distance="{{ l.distanceLabel }}" freshness="{{ l.freshness }}" fresh-color="{{ l.freshColor }}" remaining="{{ l.remaining }}" photo-bg="{{ l.photoBg }}" faved="{{ l.faved }}" not-faved="{{ l.notFaved }}" on-open="{{ l.open }}" on-fav="{{ l.fav }}" hint-size="100%,290px"></dc-import>
+          </sc-for>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <!-- ===== LISTING DETAILS (two-column desktop) ===== -->
+    <sc-if value="{{ is.listing }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:24px 0 12px"><button onClick="{{ goHome }}" style="border:none;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:#8b8177;display:flex;align-items:center;gap:6px;font-family:'Hanken Grotesk',sans-serif">&#8249; Back to browse</button></div>
+      <div style="display:grid;grid-template-columns:1.05fr 0.95fr;gap:40px;padding-bottom:56px;align-items:start">
+        <div style="position:sticky;top:96px">
+          <div style="width:100%;aspect-ratio:1;border-radius:24px;background:{{ L.photoBg }};position:relative;box-shadow:0 20px 50px -24px rgba(42,36,30,0.35)">
+            <button onClick="{{ L.fav }}" style="position:absolute;top:16px;right:16px;width:46px;height:46px;border:none;border-radius:999px;background:rgba(255,255,255,0.94);backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px">
+              <sc-if value="{{ L.faved }}" hint-placeholder-val="{{ false }}"><span style="color:#c2557a">&#10084;</span></sc-if>
+              <sc-if value="{{ L.notFaved }}" hint-placeholder-val="{{ true }}"><span style="color:#8b8177">&#9825;</span></sc-if>
+            </button>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:12px">
+            <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="3"><div style="flex:1;aspect-ratio:1;border-radius:14px;background:{{ t.bg }};border:2px solid {{ t.bd }};cursor:pointer"></div></sc-for>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+            <div>
+              <div style="font-family:'Newsreader',serif;font-size:34px;font-weight:500;color:#2a241e;line-height:1.1">{{ L.title }}</div>
+              <div style="font-size:14.5px;color:#8b8177;margin-top:6px">{{ L.neighborhood }} &#183; {{ L.distanceLabel }} away &#183; {{ L.posted }}</div>
+            </div>
+            <div style="font-size:30px;font-weight:700;color:#2a241e;white-space:nowrap">{{ L.price }}</div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+            <sc-for list="{{ L.flowers }}" as="f" hint-placeholder-count="2"><span style="padding:7px 14px;border-radius:999px;background:#f3ede4;color:#4a443c;font-size:14px;font-weight:600">{{ f }}</span></sc-for>
+          </div>
+
+          <div style="margin-top:22px;border:1px solid #ece5da;border-radius:20px;overflow:hidden;background:#fff">
+            <div style="padding:16px 18px 14px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #f3ede4">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#d98324" stroke-width="1.5"><path d="M8 2l1.6 3.4L13 6l-2.4 2.6L11 12 8 10.4 5 12l.4-3.4L3 6l3.4-.6L8 2z" stroke-linejoin="round"/></svg>
+              <span style="font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#8b8177">AI freshness estimate</span>
+            </div>
+            <div style="padding:18px;display:flex;gap:20px">
+              <div style="text-align:center;flex-shrink:0"><div style="font-family:'Space Mono',monospace;font-size:40px;font-weight:700;color:{{ L.freshColor }};line-height:1">{{ L.freshness }}%</div><div style="font-size:11px;color:#8b8177;margin-top:2px">fresh</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px">
+                <div style="height:8px;border-radius:999px;background:#f0eae0;overflow:hidden"><div style="height:100%;width:{{ L.freshPct }};background:{{ L.freshColor }};border-radius:999px"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#8b8177">Lasts about</span><span style="font-weight:700;color:#2a241e">{{ L.remaining }}</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#8b8177">Confidence</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:#2a241e">{{ L.confidence }}%</span></div>
+              </div>
+            </div>
+            <div style="padding:0 18px 18px"><div style="background:#faf6ef;border-radius:12px;padding:14px 16px">
+              <div style="font-size:11.5px;font-weight:700;color:#8b8177;margin-bottom:8px">Why this estimate</div>
+              <sc-for list="{{ aiFresh }}" as="b" hint-placeholder-count="3"><div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><span style="color:#3f7d52;font-size:13px;margin-top:1px">&#10003;</span><span style="font-size:13.5px;color:#4a443c;line-height:1.4">{{ b }}</span></div></sc-for>
+              <div style="font-size:11.5px;color:#b0a89e;margin-top:8px;line-height:1.4">Estimate, not a guarantee. Always check flowers in person at pickup.</div>
+            </div></div>
+          </div>
+
+          <div style="margin-top:18px"><div style="font-family:'Newsreader',serif;font-size:20px;font-weight:500;color:#2a241e">From the seller</div><div style="font-size:15px;color:#4a443c;line-height:1.6;margin-top:8px">{{ L.note }}</div></div>
+
+          <div style="margin-top:18px;display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #ece5da;border-radius:16px;background:#fff">
+            <div style="width:48px;height:48px;border-radius:999px;background:{{ L.sellerBg }};display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:18px">{{ L.sellerInitial }}</div>
+            <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#2a241e">{{ L.seller }}</div><div style="font-size:13px;color:#8b8177">Usually replies within an hour</div></div>
+          </div>
+
+          <div style="margin-top:20px;display:flex;gap:14px">
+            <button style="width:58px;height:58px;border:1px solid #e4ddd1;border-radius:16px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#2a241e" stroke-width="1.6"><path d="M4 7l3 8h9l2-6H6" stroke-linejoin="round"/><circle cx="8" cy="18" r="1.3" fill="#2a241e"/></svg></button>
+            <button onClick="{{ goChat }}" style="flex:1;height:58px;border:none;border-radius:16px;background:#d98324;color:#fff;font-size:17px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Contact {{ L.seller }}</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== MESSAGES (list + chat, two-pane) ===== -->
+    <sc-if value="{{ is.messages }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 0 20px"><div style="font-family:'Newsreader',serif;font-size:34px;font-weight:500;color:#2a241e">Messages</div></div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:0;border:1px solid #ece5da;border-radius:20px;overflow:hidden;background:#fff;height:600px;margin-bottom:48px">
+        <div style="border-right:1px solid #f3ede4;overflow-y:auto">
+          <sc-for list="{{ threads }}" as="t" hint-placeholder-count="3">
+            <div onClick="{{ t.open }}" style="display:flex;gap:12px;align-items:center;padding:14px 16px;cursor:pointer;border-bottom:1px solid #f3ede4;background:{{ t.rowBg }}">
+              <div style="width:48px;height:48px;border-radius:12px;background:{{ t.photoBg }};flex-shrink:0"></div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14.5px;font-weight:700;color:#2a241e">{{ t.name }}</span><span style="font-size:11.5px;color:#b0a89e">{{ t.time }}</span></div>
+                <div style="font-size:12.5px;color:#8b8177">{{ t.item }}</div>
+                <div style="font-size:13px;color:{{ t.msgColor }};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:{{ t.msgWeight }}">{{ t.last }}</div>
+              </div>
+              <sc-if value="{{ t.unread }}" hint-placeholder-val="{{ false }}"><span style="width:9px;height:9px;border-radius:999px;background:#d98324"></span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f3ede4">
+            <div style="width:40px;height:40px;border-radius:999px;background:{{ L.sellerBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">{{ L.sellerInitial }}</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700;color:#2a241e">{{ L.seller }}</div><div style="font-size:12.5px;color:#8b8177">{{ L.title }} &#183; {{ L.price }}</div></div>
+            <button onClick="{{ openL }}" style="border:1px solid #e4ddd1;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;color:#4a443c;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">View listing</button>
+          </div>
+          <div style="flex:1;padding:22px 20px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;background:#fdfbf7">
+            <div style="align-self:center;font-size:11.5px;color:#b0a89e;background:#f3ede4;padding:5px 12px;border-radius:999px">Today</div>
+            <sc-for list="{{ chatMsgs }}" as="m" hint-placeholder-count="4"><div style="max-width:62%;align-self:{{ m.align }};background:{{ m.bg }};color:{{ m.color }};padding:10px 14px;border-radius:{{ m.radius }};font-size:14.5px;line-height:1.4">{{ m.text }}</div></sc-for>
+          </div>
+          <div style="padding:12px 20px;display:flex;gap:8px;border-top:1px solid #f3ede4">
+            <sc-for list="{{ quickReplies }}" as="q" hint-placeholder-count="3"><div style="padding:9px 14px;border-radius:999px;background:#faf6ef;border:1px solid #e4ddd1;font-size:13px;font-weight:600;color:#4a443c;cursor:pointer">{{ q }}</div></sc-for>
+          </div>
+          <div style="padding:0 20px 18px;display:flex;gap:10px;align-items:center">
+            <div style="flex:1;height:46px;border:1px solid #e4ddd1;border-radius:999px;background:#fff;display:flex;align-items:center;padding:0 18px"><span style="font-size:14.5px;color:#b0a89e">Message&#8230;</span></div>
+            <button style="width:46px;height:46px;border:none;border-radius:999px;background:#d98324;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l14-6-6 14-2-6-6-2z"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== PROFILE ===== -->
+    <sc-if value="{{ is.profile }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:720px;margin:0 auto;padding:44px 0 56px">
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="width:88px;height:88px;border-radius:999px;background:linear-gradient(140deg,#d98324,#c0561f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;font-family:'Newsreader',serif">M</div>
+          <div><div style="font-family:'Newsreader',serif;font-size:28px;color:#2a241e">Mara Lind</div><div style="font-size:14px;color:#8b8177">Riverside &#183; joined 2025</div></div>
+        </div>
+        <div style="margin-top:24px;display:flex;background:#fff;border:1px solid #ece5da;border-radius:18px;overflow:hidden">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3"><div style="flex:1;padding:20px 0;text-align:center;border-right:1px solid #f3ede4"><div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;color:#2a241e">{{ s.n }}</div><div style="font-size:13px;color:#8b8177;margin-top:2px">{{ s.label }}</div></div></sc-for>
+        </div>
+        <div style="margin-top:24px;background:#fff;border:1px solid #ece5da;border-radius:18px;overflow:hidden">
+          <sc-for list="{{ profileMenu }}" as="m" hint-placeholder-count="4">
+            <div onClick="{{ m.go }}" style="display:flex;align-items:center;gap:14px;padding:18px;border-bottom:1px solid #f3ede4;cursor:pointer"><div style="width:38px;height:38px;border-radius:10px;background:{{ m.bg }};display:flex;align-items:center;justify-content:center;font-size:17px">{{ m.icon }}</div><span style="flex:1;font-size:15.5px;font-weight:600;color:#2a241e">{{ m.label }}</span><span style="color:#ccc3b6;font-size:18px">&#8250;</span></div>
+          </sc-for>
+        </div>
+        <button onClick="{{ goHome }}" style="margin-top:24px;height:52px;padding:0 24px;border:1px solid #e4ddd1;border-radius:14px;background:#fff;color:#c0492f;font-size:15px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Sign out</button>
+      </div>
+    </sc-if>
+
+    <!-- ===== CREATE FLOW (centered card) ===== -->
+    <sc-if value="{{ is.create }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:560px;margin:0 auto;padding:36px 0 56px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+          <button onClick="{{ createBack }}" style="width:42px;height:42px;border:1px solid #ece5da;border-radius:12px;background:#fff;cursor:pointer;font-size:18px;color:#2a241e">&#8249;</button>
+          <div style="flex:1"><div style="height:6px;border-radius:999px;background:#f0eae0;overflow:hidden"><div style="height:100%;width:{{ createPct }};background:#d98324;transition:width .3s"></div></div></div>
+          <span style="font-family:'Space Mono',monospace;font-size:13px;color:#8b8177">{{ createStepLabel }}</span>
+        </div>
+
+        <!-- step: photos -->
+        <sc-if value="{{ cs.photos }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family:'Newsreader',serif;font-size:30px;font-weight:500;color:#2a241e">Add a few photos</div>
+          <div style="font-size:15px;color:#8b8177;margin-top:8px;line-height:1.5">Snap the bouquet in good light. AI does the rest &#8212; naming, freshness and a quality check.</div>
+          <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+            <div style="aspect-ratio:1;border-radius:18px;background:radial-gradient(circle at 34% 34%,#e59ab0 0 22%,transparent 23%),radial-gradient(circle at 66% 30%,#d97a97 0 18%,transparent 19%),radial-gradient(circle at 50% 60%,#f2c6d3 0 24%,transparent 25%),linear-gradient(155deg,#f2ebdf,#e6dccb);position:relative"><div style="position:absolute;bottom:8px;left:8px;background:rgba(255,255,255,0.9);border-radius:8px;padding:3px 8px;font-size:10.5px;font-weight:700;color:#3f7d52">Cover</div></div>
+            <div style="aspect-ratio:1;border-radius:18px;background:radial-gradient(circle at 46% 42%,#e59ab0 0 26%,transparent 27%),linear-gradient(155deg,#f2ebdf,#e6dccb)"></div>
+            <button onClick="{{ analyze }}" style="aspect-ratio:1;border-radius:18px;border:2px dashed #d9c9b0;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><div style="width:44px;height:44px;border-radius:999px;background:#fbeede;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#d98324" stroke-width="2" stroke-linecap="round"><path d="M11 5v12M5 11h12"/></svg></div><span style="font-size:12.5px;font-weight:600;color:#8b8177">Add photo</span></button>
+          </div>
+          <div style="margin-top:18px;display:flex;gap:10px;align-items:flex-start;background:#faf6ef;border-radius:14px;padding:14px 16px"><span style="font-size:16px">&#128161;</span><span style="font-size:13.5px;color:#6f665d;line-height:1.45">Daylight near a window works best. Fill the frame with the bouquet and keep the background simple.</span></div>
+          <button onClick="{{ analyze }}" style="margin-top:24px;width:100%;height:56px;border:none;border-radius:16px;background:#d98324;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Analyze with AI</button>
+        </sc-if>
+
+        <!-- step: analyzing -->
+        <sc-if value="{{ cs.analyzing }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0">
+            <div style="position:relative;width:120px;height:120px"><div style="position:absolute;inset:0;border-radius:999px;background:radial-gradient(circle at 40% 40%,#e59ab0 0 30%,transparent 31%),radial-gradient(circle at 64% 56%,#d97a97 0 24%,transparent 25%),linear-gradient(#f2ebdf,#e6dccb)"></div><div style="position:absolute;inset:-8px;border-radius:999px;border:3px solid #f0eae0;border-top-color:#d98324;animation:slfspin 0.9s linear infinite"></div></div>
+            <div style="font-family:'Newsreader',serif;font-size:26px;font-weight:500;color:#2a241e;margin-top:28px">Reading your bouquet&#8230;</div>
+            <div style="margin-top:22px;display:flex;flex-direction:column;gap:12px;align-items:flex-start"><sc-for list="{{ analyzeSteps }}" as="a" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:10px;font-size:14.5px;color:{{ a.c }}"><span style="width:18px;height:18px;border-radius:999px;background:{{ a.dot }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px">{{ a.mark }}</span>{{ a.label }}</div></sc-for></div>
+          </div>
+        </sc-if>
+
+        <!-- step: ai results -->
+        <sc-if value="{{ cs.ai }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">&#10024;</span><div style="font-family:'Newsreader',serif;font-size:28px;font-weight:500;color:#2a241e">Here&#8217;s what AI found</div></div>
+          <div style="margin-top:20px;border:1px solid #ece5da;border-radius:18px;background:#fff;padding:18px"><div style="font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#8b8177;margin-bottom:14px">Recognized flowers</div>
+            <sc-for list="{{ flowersRec }}" as="f" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:38px;height:38px;border-radius:10px;background:{{ f.bg }}"></div><div style="flex:1;font-size:15px;font-weight:600;color:#2a241e">{{ f.name }}</div><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;border-radius:999px;background:#f0eae0;overflow:hidden"><div style="height:100%;width:{{ f.pct }};background:#3f7d52"></div></div><span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#3f7d52">{{ f.conf }}%</span></div></div></sc-for>
+            <div style="font-size:12px;color:#b0a89e">Confidence shown per flower. You can rename anything next.</div>
+          </div>
+          <div style="margin-top:14px;border:1px solid #dbead9;border-radius:18px;background:#f2f7ef;padding:18px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#3f7d52">Freshness &amp; quality</span><span style="padding:4px 10px;border-radius:999px;background:#3f7d52;color:#fff;font-size:12px;font-weight:700">{{ draft.quality }}</span></div>
+            <div style="display:flex;gap:18px;align-items:center"><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#3f7d52;line-height:1">{{ draft.freshness }}%</div><div style="flex:1"><div style="height:8px;border-radius:999px;background:#e2ecdd;overflow:hidden"><div style="height:100%;width:92%;background:#3f7d52"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px"><span style="color:#5a6a55">Lasts about</span><span style="font-weight:700;color:#3a4a38">{{ draft.remaining }}</span></div></div></div>
+          </div>
+          <button onClick="{{ toDetails }}" style="margin-top:22px;width:100%;height:56px;border:none;border-radius:16px;background:#d98324;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Looks right &#8212; continue</button>
+        </sc-if>
+
+        <!-- step: details -->
+        <sc-if value="{{ cs.details }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'Newsreader',serif;font-size:28px;font-weight:500;color:#2a241e">Last details</div>
+          <div style="font-size:14px;color:#8b8177;margin-top:6px">Name and freshness are prefilled. Just set your price.</div>
+          <label style="margin-top:22px;display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:600;color:#4a443c">Title <span style="color:#b0a89e;font-weight:400">&#183; AI suggested</span></span><input value="{{ titleVal }}" onInput="{{ setTitle }}" style="height:54px;border:1px solid #e4ddd1;border-radius:14px;padding:0 16px;font-size:15px;font-family:'Hanken Grotesk',sans-serif;background:#fff;color:#2a241e;outline:none"></label>
+          <div style="margin-top:16px"><span style="font-size:13px;font-weight:600;color:#4a443c">Your price</span><div style="margin-top:7px;height:66px;border:1px solid {{ priceBorder }};border-radius:14px;background:#fff;display:flex;align-items:center;padding:0 18px;gap:6px"><span style="font-size:26px;font-weight:700;color:#8b8177">$</span><input value="{{ priceVal }}" onInput="{{ setPrice }}" inputmode="numeric" placeholder="0" style="border:none;outline:none;background:transparent;font-size:28px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;width:100%;color:#2a241e"></div><div style="font-size:12px;color:#b0a89e;margin-top:6px">You decide the price. AI never suggests or sets it.</div></div>
+          <div style="margin-top:16px"><span style="font-size:13px;font-weight:600;color:#4a443c">Pickup area</span><div style="margin-top:7px;display:flex;gap:8px"><sc-for list="{{ areas }}" as="a" hint-placeholder-count="3"><button onClick="{{ a.pick }}" style="flex:1;height:48px;border:1px solid {{ a.bd }};border-radius:12px;background:{{ a.bg }};color:{{ a.fg }};font-size:14px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">{{ a.label }}</button></sc-for></div><div style="font-size:12px;color:#b0a89e;margin-top:6px">Buyers see your neighborhood &amp; distance &#8212; never your exact address.</div></div>
+          <button onClick="{{ toReview }}" style="margin-top:24px;width:100%;height:56px;border:none;border-radius:16px;background:{{ publishBg }};color:#fff;font-size:16px;font-weight:700;cursor:{{ publishCursor }};font-family:'Hanken Grotesk',sans-serif">Preview listing</button>
+        </sc-if>
+
+        <!-- step: review -->
+        <sc-if value="{{ cs.review }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'Newsreader',serif;font-size:26px;font-weight:500;color:#2a241e">Preview &amp; publish</div>
+          <div style="margin-top:18px;border:1px solid #ece5da;border-radius:20px;overflow:hidden;background:#fff;max-width:320px"><div style="aspect-ratio:4/3;background:{{ draft.photoBg }};position:relative"><div style="position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,0.92)"><span style="width:7px;height:7px;border-radius:999px;background:#3f7d52"></span><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#3f7d52">{{ draft.freshness }}%</span></div></div><div style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'Newsreader',serif;font-size:19px;color:#2a241e">{{ titleVal }}</span><span style="font-size:17px;font-weight:700;color:#2a241e">{{ priceDisplay }}</span></div><div style="font-size:13px;color:#8b8177;margin-top:4px">{{ draft.neighborhood }} &#183; lasts {{ draft.remaining }}</div></div></div>
+          <div style="margin-top:18px;background:#f2f7ef;border:1px solid #dbead9;border-radius:16px;padding:16px;display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:999px;background:#3f7d52;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px">&#10003;</span><div><div style="font-size:14px;font-weight:700;color:#3a4a38">Listing quality: {{ draft.quality }}</div><div style="font-size:12.5px;color:#5a6a55">Clear photos, healthy bouquet, complete details.</div></div></div>
+          <button onClick="{{ publish }}" style="margin-top:24px;width:100%;height:56px;border:none;border-radius:16px;background:#d98324;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Publish listing</button>
+        </sc-if>
+
+        <!-- step: success -->
+        <sc-if value="{{ cs.success }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 0"><div style="width:96px;height:96px;border-radius:999px;background:#3f7d52;display:flex;align-items:center;justify-content:center;animation:slfpop .5s ease-out"><svg width="46" height="46" viewBox="0 0 46 46" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 24l7 7 14-15"/></svg></div><div style="font-family:'Newsreader',serif;font-size:30px;font-weight:500;color:#2a241e;margin-top:24px">You&#8217;re live!</div><div style="font-size:15px;color:#8b8177;margin-top:10px;line-height:1.5;max-width:340px">Your bouquet is now visible to people nearby. We&#8217;ll notify you the moment someone reaches out.</div><button onClick="{{ afterPublish }}" style="margin-top:30px;width:100%;max-width:320px;height:56px;border:none;border-radius:16px;background:#d98324;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">View my listing</button><button onClick="{{ goHome }}" style="margin-top:12px;border:none;background:transparent;color:#8b8177;font-size:15px;font-weight:600;cursor:pointer;font-family:'Hanken Grotesk',sans-serif">Back to browse</button></div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- ===== SORT SHEET (centered modal on desktop) ===== -->
+  <sc-if value="{{ showSort }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheets }}" style="position:fixed;inset:0;background:rgba(28,24,21,0.4);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="width:100%;max-width:380px;background:#fdfbf7;border-radius:20px;padding:20px 24px 16px;animation:slfrise .2s ease-out;box-shadow:0 30px 70px -20px rgba(42,36,30,0.4)">
+        <div style="font-family:'Newsreader',serif;font-size:21px;color:#2a241e;margin-bottom:12px">Sort by</div>
+        <sc-for list="{{ sortRows }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.pick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 4px;border:none;background:transparent;cursor:pointer;border-bottom:1px solid #f3ede4;font-family:'Hanken Grotesk',sans-serif"><span style="font-size:15.5px;font-weight:{{ o.weight }};color:#2a241e">{{ o.label }}</span><sc-if value="{{ o.active }}" hint-placeholder-val="{{ false }}"><span style="color:#d98324;font-size:18px">&#10003;</span></sc-if></button></sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state = {
+      screen:'home', listingId:'l1', favs:['l3'],
+      sortBy:'Distance', activeChip:'All', showSort:false,
+      createStep:'photos',
+      titleVal:'Blush Garden Roses', priceVal:'', area:'Riverside'
+    };
+    this.listings = [
+      {id:'l1', title:'Blush Garden Roses', seller:'Mara', neighborhood:'Riverside', distance:'1.2', price:18, freshness:92, remaining:'5\u20136 days', confidence:86, posted:'2h ago', flowers:['Garden Rose','Eucalyptus'], cols:['#e59ab0','#d97a97','#f2c6d3','#9db98a','#e59ab0'], sellerBg:'#c2557a', note:'Received these yesterday for my birthday. Kept them cool overnight \u2014 still gorgeous, but I\u2019m travelling and can\u2019t enjoy them.'},
+      {id:'l2', title:'Sunlit Tulips', seller:'Jonas', neighborhood:'Old Town', distance:'0.8', price:12, freshness:78, remaining:'3\u20134 days', confidence:81, posted:'5h ago', flowers:['Tulips'], cols:['#e6a94b','#e08a3c','#f2cf7a','#7fa06a','#e6a94b'], sellerBg:'#d98324', note:'A dozen bright tulips, opened beautifully. Downsizing my apartment plants.'},
+      {id:'l3', title:'White Peonies', seller:'Aina', neighborhood:'Harbor', distance:'2.4', price:24, freshness:88, remaining:'4\u20135 days', confidence:79, posted:'1h ago', flowers:['Peonies'], cols:['#f3ede6','#e9ddcf','#fbf6ef','#9db98a','#efe6da'], sellerBg:'#6d9a4f', note:'Lush white peonies, just starting to open. Too many flowers at home already!'},
+      {id:'l4', title:'Wild Meadow Mix', seller:'Sofia', neighborhood:'Greenfield', distance:'3.1', price:9, freshness:63, remaining:'2\u20133 days', confidence:74, posted:'yesterday', flowers:['Mixed','Daisies'], cols:['#e7c14e','#d98a8a','#f2e3a0','#8fae74','#c98fb0'], sellerBg:'#8f6db0', note:'Cheerful mixed bunch from a farmers market. A couple of stems are fading.'},
+      {id:'l5', title:'Deep Red Roses', seller:'Liam', neighborhood:'Midtown', distance:'1.7', price:20, freshness:95, remaining:'6\u20137 days', confidence:88, posted:'30m ago', flowers:['Roses'], cols:['#b23b4e','#8f2c3d','#d9556a','#7f9a5f','#b23b4e'], sellerBg:'#b23b4e', note:'A dozen deep red roses, delivered this morning. Long stems, very fresh.'},
+      {id:'l6', title:'Lavender Bunch', seller:'Noor', neighborhood:'Hillside', distance:'4.0', price:8, freshness:70, remaining:'3\u20134 days', confidence:77, posted:'3h ago', flowers:['Lavender'], cols:['#9a86c4','#7c68ad','#c3b3e0','#8fae74','#9a86c4'], sellerBg:'#7c68ad', note:'Fragrant lavender, dries beautifully too. Moving out this week.'},
+      {id:'l7', title:'Sunflower Trio', seller:'Emil', neighborhood:'Eastgate', distance:'2.0', price:14, freshness:84, remaining:'4\u20135 days', confidence:82, posted:'6h ago', flowers:['Sunflowers'], cols:['#e0a92e','#c98f1e','#f2d06a','#6f8a4f','#e0a92e'], sellerBg:'#c98f1e', note:'Three big cheerful sunflowers. Received as a thank-you gift.'},
+      {id:'l8', title:'Pink Ranunculus', seller:'Vera', neighborhood:'Riverside', distance:'1.5', price:16, freshness:90, remaining:'5\u20136 days', confidence:84, posted:'4h ago', flowers:['Ranunculus'], cols:['#e88fb0','#d76f97','#f4c3d6','#8fae74','#e88fb0'], sellerBg:'#d76f97', note:'Delicate pink ranunculus, layered petals. From a event centerpiece.'}
+    ];
+    this.draft = {title:'Blush Garden Roses', freshness:92, remaining:'5\u20136 days', confidence:86, quality:'Excellent', neighborhood:'Riverside', cols:['#e59ab0','#d97a97','#f2c6d3','#9db98a','#e59ab0']};
+    this.aiFresh = ['Petals firm, vivid and evenly coloured','Foliage green with no yellowing','No visible browning, spotting or wilting','Stems appear freshly cut'];
+    this.flowersRecData = [{name:'Garden Rose',conf:94,bg:'#e59ab0'},{name:'Eucalyptus',conf:88,bg:'#9db98a'}];
+    this.threadsData = [
+      {id:'l5', name:'Liam', item:'Deep Red Roses \u00b7 $20', last:'Great, see you at 6 by the fountain!', time:'11:02', unread:true},
+      {id:'l3', name:'Aina', item:'White Peonies \u00b7 $24', last:'You: Are these still available?', time:'Yesterday', unread:false},
+      {id:'l2', name:'Jonas', item:'Sunlit Tulips \u00b7 $12', last:'No problem, take your time.', time:'Mon', unread:false}
+    ];
+    this.chatData = [
+      {from:'me', text:'Hi! Are the red roses still available?'},
+      {from:'them', text:'Yes they are! Fresh from this morning.'},
+      {from:'me', text:'Perfect. Could I pick them up this evening?'},
+      {from:'them', text:'Great, see you at 6 by the fountain!'}
+    ];
+    this.quickRepliesData = ['Still available?','When can I pick up?','Where exactly?'];
+    this.sortOptions = ['Distance','Freshness','Newest','Price'];
+    this.chipOptions = ['All','Roses','Tulips','Peonies','Under $15'];
+  }
+  bg(cols){
+    const spots=[[30,34,15],[62,27,13],[46,54,16],[75,55,12],[38,70,11]];
+    const parts=(cols||[]).slice(0,5).map((c,i)=>{const s=spots[i]||[50,50,12];return `radial-gradient(circle at ${s[0]}% ${s[1]}%, ${c} 0 ${s[2]}%, ${c}00 ${s[2]+2}%)`;});
+    parts.push('linear-gradient(155deg,#f2ebdf,#e6dccb)');
+    return parts.join(', ');
+  }
+  fColor(s){ return s>=85?'#3f7d52':s>=65?'#6d9a4f':s>=45?'#d98324':'#c0492f'; }
+  fColorLight(s){ return s>=85?'#e2ecdd':'#f0eae0'; }
+  go(screen){ this.setState({screen, showSort:false}); if(typeof window!=='undefined') window.scrollTo(0,0); }
+  openListing(id){ this.setState({screen:'listing', listingId:id, showSort:false}); if(typeof window!=='undefined') window.scrollTo(0,0); }
+  toggleFav(id){ this.setState(s=>({favs: s.favs.includes(id)? s.favs.filter(x=>x!==id): [...s.favs, id]})); }
+  vm(l){ const fc=this.fColor(l.freshness); return {...l, price:'$'+l.price, distanceLabel:l.distance+' km', freshColor:fc, freshPct:l.freshness+'%', photoBg:this.bg(l.cols), sellerInitial:l.seller[0], faved:this.state.favs.includes(l.id), notFaved:!this.state.favs.includes(l.id), open:()=>this.openListing(l.id), fav:()=>this.toggleFav(l.id)}; }
+  sortFeed(list){
+    const by=this.state.sortBy; const a=[...list];
+    if(by==='Distance') a.sort((x,y)=>parseFloat(x.distance)-parseFloat(y.distance));
+    else if(by==='Freshness') a.sort((x,y)=>y.freshness-x.freshness);
+    else if(by==='Price') a.sort((x,y)=>x.price-y.price);
+    return a;
+  }
+  renderVals(){
+    const s=this.state;
+    const sc=(id)=>s.screen===id;
+    const is={browse:sc('home')||sc('search'), saved:sc('saved'), listing:sc('listing'), messages:sc('messages'), profile:sc('profile'), create:sc('create')};
+    const feed=this.sortFeed(this.listings).map(l=>this.vm(l));
+    const L=this.vm(this.listings.find(l=>l.id===s.listingId)||this.listings[0]);
+    const favList=this.listings.filter(l=>s.favs.includes(l.id)).map(l=>this.vm(l));
+
+    const navSel=(scr,label)=>{const on=s.screen===scr||(scr==='home'&&s.screen==='search'); return {label, go:()=>this.go(scr), bg:on?'#fbeede':'transparent', fg:on?'#c0561f':'#4a443c', weight:on?700:600};};
+    const navItems=[navSel('home','Browse'), navSel('saved','Saved'), navSel('profile','Profile')];
+
+    const chipPick=(name)=>({label:name, pick:()=>this.setState({activeChip:name}), ...(s.activeChip===name?{bg:'#fbeede',fg:'#c0561f',bd:'#f0d3a8'}:{bg:'#fff',fg:'#4a443c',bd:'#ece5da'})});
+    const chips=this.chipOptions.map(chipPick);
+
+    const thumbs=(L.cols||[]).slice(0,3).map((c,i)=>({bg:this.bg([c,L.cols[(i+1)%L.cols.length]]), bd:i===0?'#d98324':'transparent'}));
+
+    const chatMsgs=this.chatData.map(m=>({text:m.text, align:m.from==='me'?'flex-end':'flex-start', bg:m.from==='me'?'#d98324':'#fff', color:m.from==='me'?'#fff':'#2a241e', radius:m.from==='me'?'16px 16px 4px 16px':'16px 16px 16px 4px'}));
+    const threads=this.threadsData.map(t=>{const l=this.listings.find(x=>x.id===t.id); return {...t, photoBg:this.bg(l?l.cols:[]), msgColor:t.unread?'#2a241e':'#8b8177', msgWeight:t.unread?700:400, rowBg: t.id===s.listingId?'#faf6ef':'#fff', open:()=>this.setState({listingId:t.id})};});
+
+    const stats=[{n:'3',label:'Listed'},{n:'11',label:'Given'},{n:favList.length+'',label:'Saved'}];
+    const profileMenu=[
+      {label:'My listings',icon:'\ud83c\udf3f',bg:'#eef1e5',go:()=>this.go('home')},
+      {label:'Saved bouquets',icon:'\u2764\ufe0f',bg:'#fbe8ef',go:()=>this.go('saved')},
+      {label:'Settings',icon:'\u2699\ufe0f',bg:'#f0eae0',go:()=>{}},
+      {label:'Help & safety',icon:'\ud83d\udee1\ufe0f',bg:'#eef1e5',go:()=>{}}
+    ];
+
+    const sortRows=this.sortOptions.map(o=>({label:o, active:s.sortBy===o, weight:s.sortBy===o?700:500, pick:()=>this.setState({sortBy:o, showSort:false})}));
+
+    // create flow
+    const cs={photos:s.createStep==='photos', analyzing:s.createStep==='analyzing', ai:s.createStep==='ai', details:s.createStep==='details', review:s.createStep==='review', success:s.createStep==='success'};
+    const stepIndex={photos:1, analyzing:1, ai:2, details:2, review:3, success:3};
+    const createPct = (cs.photos||cs.analyzing)?'33%':(cs.ai||cs.details)?'66%':'100%';
+    const createStepLabel = cs.success? 'Done' : (stepIndex[s.createStep]+'/3');
+    const analyzeSteps=[
+      {label:'Detecting bouquet',mark:'\u2713',dot:'#3f7d52',c:'#4a443c'},
+      {label:'Identifying flowers',mark:'\u2713',dot:'#3f7d52',c:'#4a443c'},
+      {label:'Estimating freshness',mark:'',dot:'#d98324',c:'#2a241e'},
+      {label:'Checking photo quality',mark:'',dot:'#e4ddd1',c:'#b0a89e'}
+    ];
+    const areaSel=(name)=>({label:name, pick:()=>this.setState({area:name}), ...(s.area===name?{bg:'#fbeede',fg:'#c0561f',bd:'#f0d3a8'}:{bg:'#fff',fg:'#4a443c',bd:'#e4ddd1'})});
+    const areas=[areaSel('Riverside'),areaSel('Old Town'),areaSel('Harbor')];
+    const hasPrice=s.priceVal && parseFloat(s.priceVal)>0;
+
+    const createBack=()=>{
+      const order=['photos','ai','details','review'];
+      const i=order.indexOf(s.createStep);
+      if(cs.photos||cs.success||cs.analyzing) this.go('home');
+      else if(i>0) this.setState({createStep:order[i-1]});
+      else this.go('home');
+    };
+
+    return {
+      is, cs, navItems, chips, feed, L, favList,
+      favEmpty:favList.length===0, favNotEmpty:favList.length>0, savedCount:favList.length,
+      browseKicker: s.screen==='search'?'Search results':'Nearby \u00b7 Riverside',
+      browseTitle: s.screen==='search'?'Bouquets near you':'Fresh today',
+      resultCount:this.listings.length, sortBy:s.sortBy,
+      thumbs, aiFresh:this.aiFresh, threads, chatMsgs, quickReplies:this.quickRepliesData,
+      stats, profileMenu, sortRows, showSort:s.showSort,
+      flowersRec:this.flowersRecData.map(f=>({...f,pct:f.conf+'%'})), draft:this.draft,
+      analyzeSteps, createPct, createStepLabel, areas,
+      titleVal:s.titleVal, priceVal:s.priceVal,
+      priceDisplay: hasPrice?('$'+s.priceVal):'$\u2014',
+      priceBorder: hasPrice?'#3f7d52':'#e4ddd1',
+      publishBg: hasPrice?'#d98324':'#e8cfa8', publishCursor: hasPrice?'pointer':'not-allowed',
+      // nav handlers
+      goHome:()=>this.go('home'), goSearch:()=>this.go('search'), goSaved:()=>this.go('saved'),
+      goProfile:()=>this.go('profile'), goMessages:()=>this.go('messages'),
+      goChat:()=>this.go('messages'), openL:()=>this.openListing(s.listingId),
+      openSort:()=>this.setState({showSort:true}), closeSheets:()=>this.setState({showSort:false}),
+      stop:(e)=>e.stopPropagation(),
+      // create handlers
+      startCreate:()=>{ this.setState({createStep:'photos'}); this.go('create'); },
+      createBack,
+      analyze:()=>{ this.setState({createStep:'analyzing'}); setTimeout(()=>this.setState(st=>st.createStep==='analyzing'?{createStep:'ai'}:{}), 2400); },
+      toDetails:()=>this.setState({createStep:'details'}),
+      toReview:()=>{ if(hasPrice) this.setState({createStep:'review'}); },
+      publish:()=>this.setState({createStep:'success'}),
+      afterPublish:()=>this.openListing('l1'),
+      setTitle:(e)=>this.setState({titleVal:e.target.value}),
+      setPrice:(e)=>this.setState({priceVal:e.target.value.replace(/[^0-9]/g,'')})
+    };
+  }
+}
+</script>
+</body>
+</html>

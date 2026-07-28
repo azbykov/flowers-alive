@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
+/*
+ * Tokens follow design/Product design system guidelines (warm neutrals,
+ * amber primary). Legacy names (stem, petal, line…) are kept as semantic
+ * aliases so components read the same: stem = primary action color.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: #fdfbf7;
+  --card: #ffffff;
+  --ink: #2a241e;
+  --ink-2: #4a443c;
+  --ink-soft: #8b8177;
+  --stem: #d98324;
+  --stem-deep: #c0561f;
+  --stem-tint: #fbeede;
+  --petal: #c2557a;
+  --petal-tint: #fbe8e3;
+  --line: #ece5da;
+  --hairline: #f3ede4;
+  --track: #f0eae0;
+  --fresh-high: #3f7d52;
+  --fresh-mid: #d98324;
+  --fresh-low: #c0492f;
+
+  /* Handoff component tokens */
+  --ink-warm: #2a241e;
+  --muted: #8b8177;
+  --faint: #b0a89e;
+  --sep: #cfc6ba;
+  --like: #c2557a;
+  --surface-tint: #faf6ef;
+  --fresh-very: #3f7d52;
+  --fresh-good: #6d9a4f;
+  --fresh-fading: #d98324;
+  --fresh-wilting: #c0492f;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-soft: var(--ink-soft);
+  --color-stem: var(--stem);
+  --color-stem-deep: var(--stem-deep);
+  --color-stem-tint: var(--stem-tint);
+  --color-petal: var(--petal);
+  --color-petal-tint: var(--petal-tint);
+  --color-line: var(--line);
+  --color-hairline: var(--hairline);
+  --color-track: var(--track);
+  --color-fresh-high: var(--fresh-high);
+  --color-fresh-mid: var(--fresh-mid);
+  --color-fresh-low: var(--fresh-low);
+  --color-ink-warm: var(--ink-warm);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-sep: var(--sep);
+  --color-like: var(--like);
+  --color-surface-tint: var(--surface-tint);
+  --font-sans: var(--font-hanken);
+  --font-ui: var(--font-hanken);
+  --font-display: var(--font-newsreader);
+  --font-data: var(--font-space-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes slfpop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slfrise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
