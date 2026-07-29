@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let sellerId: string;
   try {
-    sellerId = await getSessionSellerId(request);
+    sellerId = await getSessionSellerId();
   } catch (err) {
     if (err instanceof AuthError) {
       return NextResponse.json({ error: err.message }, { status: 401 });

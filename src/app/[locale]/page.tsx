@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type {
@@ -25,6 +31,33 @@ import { Button } from "@/components/ui/Button";
 type BrowseView = "list" | "map";
 
 const VIEW_STORAGE_KEY = "slf-browse-view";
+const viewListeners = new Set<() => void>();
+
+function readBrowseView(): BrowseView {
+  try {
+    const stored = sessionStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored === "list" || stored === "map") return stored;
+  } catch {
+    /* ignore */
+  }
+  return "list";
+}
+
+function subscribeBrowseView(onStoreChange: () => void) {
+  viewListeners.add(onStoreChange);
+  return () => {
+    viewListeners.delete(onStoreChange);
+  };
+}
+
+function writeBrowseView(next: BrowseView) {
+  try {
+    sessionStorage.setItem(VIEW_STORAGE_KEY, next);
+  } catch {
+    /* ignore */
+  }
+  viewListeners.forEach((listener) => listener());
+}
 
 const SORT_KEYS: SortKey[] = ["distance", "freshness", "newest", "price"];
 
@@ -131,7 +164,11 @@ export default function BrowsePage() {
   const [freshOnly, setFreshOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [listings, setListings] = useState<PublicListing[] | null>(null);
-  const [view, setView] = useState<BrowseView>("list");
+  const view = useSyncExternalStore(
+    subscribeBrowseView,
+    readBrowseView,
+    () => "list",
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const sortOptions = SORT_KEYS.map((value) => ({
@@ -151,22 +188,8 @@ export default function BrowsePage() {
     void getViewerLocation().then(setViewer);
   }, []);
 
-  useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(VIEW_STORAGE_KEY);
-      if (stored === "list" || stored === "map") setView(stored);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   function changeView(next: BrowseView) {
-    setView(next);
-    try {
-      sessionStorage.setItem(VIEW_STORAGE_KEY, next);
-    } catch {
-      /* ignore */
-    }
+    writeBrowseView(next);
   }
 
   const load = useCallback(async () => {
