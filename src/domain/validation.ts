@@ -7,7 +7,7 @@ export const createListingSchema = z.object({
   priceCents: z
     .number()
     .int()
-    .min(0, "Price cannot be negative")
+    .min(1, "Price must be greater than zero")
     .max(100_000_00, "Price is unrealistically high"),
   currency: z.string().length(3).default("EUR"),
   flowerTypes: z.array(z.enum(FLOWER_TYPES)).min(1).max(5),

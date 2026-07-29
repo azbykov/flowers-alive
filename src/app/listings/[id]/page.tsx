@@ -8,8 +8,7 @@ import { FLOWER_LABELS, PICKUP_LABELS } from "@/domain/types";
 import { formatPrice, timeAgo } from "@/domain/format";
 import { distanceLabel } from "@/domain/geo";
 import { getViewerLocation } from "@/lib/client/location";
-import { getProfile, useAuthProfile } from "@/lib/client/profile";
-import { config } from "@/lib/config";
+import { useAuthProfile } from "@/lib/client/profile";
 import { FreshnessCard } from "@/components/listing/FreshnessCard";
 import { FavoriteButton } from "@/components/listing/FavoriteButton";
 import { Chip } from "@/components/ui/Chip";
@@ -51,23 +50,17 @@ export default function ListingPage({
       }
       const data = (await res.json()) as { listing: PublicListing };
       setListing(data.listing);
-      const me = profile.id !== "server" ? profile.id : getProfile().id;
-      setIsOwner(data.listing.seller.id === me);
+      const me = profile.id !== "server" ? profile.id : "";
+      setIsOwner(Boolean(me) && data.listing.seller.id === me);
     })();
   }, [id, profile.id]);
 
   async function markSold() {
     if (listing === null || listing === "missing") return;
     setMarking(true);
-    const headers: Record<string, string> = {
-      "content-type": "application/json",
-    };
-    if (config.demoMode) {
-      headers["x-seller-id"] = getProfile().id;
-    }
     const res = await fetch(`/api/listings/${listing.id}`, {
       method: "PATCH",
-      headers,
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ action: "markSold" }),
     });
     setMarking(false);

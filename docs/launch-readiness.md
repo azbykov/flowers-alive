@@ -19,7 +19,7 @@ Companion to [architecture.md](./architecture.md). Manual wiring steps:
 | Favorites | Done (device-local; DB table ready) |
 | Design system UI + responsive shell | Done |
 | Domain logic + unit/integration tests (20) | Done |
-| Demo mode (memory repo + mock AI) | Done — zero-config |
+| Demo mode (memory repo + mock AI) | Removed — use local Supabase + seed.sql |
 | Supabase Auth (magic link) + session in API | **Code done** — needs live project |
 | Postgres schema + full RLS | **Migrations ready** (`0001`–`0003`) |
 | Photos → Supabase Storage | **Code done** — needs bucket |

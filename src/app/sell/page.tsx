@@ -2,35 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type {
   BouquetAnalysis,
+  Coordinates,
+  FlowerType,
   FreshnessReport,
   PickupMethod,
   PublicListing,
 } from "@/domain/types";
-import { FLOWER_LABELS, PICKUP_LABELS, PICKUP_METHODS } from "@/domain/types";
+import { FLOWER_LABELS, FLOWER_TYPES, PICKUP_LABELS, PICKUP_METHODS } from "@/domain/types";
 import { formatPrice } from "@/domain/format";
 import { remainingDaysLabel } from "@/domain/freshness";
 import { getProfile, saveProfile, useAuthProfile } from "@/lib/client/profile";
-import { uploadListingPhotos } from "@/lib/client/storage";
+import {
+  getSellerCoordinates,
+  resolveSellerNeighborhood,
+} from "@/lib/client/sellerLocation";
+import { removeListingPhotos, uploadListingPhotos } from "@/lib/client/storage";
 import { config } from "@/lib/config";
 import { freshColor } from "@/components/listing/freshness";
 import { PhotoUpload, type PhotoItem } from "@/components/listing/PhotoUpload";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
-import { Field, Select, TextArea, TextInput } from "@/components/ui/Field";
-
-/** Demo neighborhoods with approximate centers — precise address is never asked. */
-const NEIGHBORHOODS: Record<string, { lat: number; lng: number }> = {
-  Jordaan: { lat: 52.3739, lng: 4.8809 },
-  "De Pijp": { lat: 52.3547, lng: 4.8921 },
-  Centrum: { lat: 52.3728, lng: 4.8936 },
-  "Oud-West": { lat: 52.3676, lng: 4.8672 },
-  Oost: { lat: 52.3625, lng: 4.9296 },
-  Noord: { lat: 52.3907, lng: 4.9163 },
-  Zuid: { lat: 52.3402, lng: 4.8726 },
-  West: { lat: 52.3792, lng: 4.8562 },
-};
+import { Field, TextArea, TextInput } from "@/components/ui/Field";
 
 const QUALITY_LABELS = {
   excellent: "Excellent",
@@ -71,7 +66,10 @@ const STEP_LABEL: Record<Step, string> = {
   success: "Done",
 };
 
+type LocationStatus = "idle" | "loading" | "ready" | "denied" | "error";
+
 export default function SellPage() {
+  const router = useRouter();
   const { profile: authProfile, signedIn, loading: authLoading } = useAuthProfile();
   const [step, setStep] = useState<Step>("photos");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -84,7 +82,11 @@ export default function SellPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [neighborhood, setNeighborhood] = useState("Jordaan");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
+  const [locationError, setLocationError] = useState("");
+  const [flowerTypes, setFlowerTypes] = useState<FlowerType[]>(["other"]);
   const [pickup, setPickup] = useState<PickupMethod[]>(["meet"]);
   const [sellerName, setSellerName] = useState("");
   const [sellerContact, setSellerContact] = useState("");
@@ -103,10 +105,14 @@ export default function SellPage() {
   // Analysis starts as soon as photos change — the analyzing screen usually
   // just catches up with a request that is already in flight.
   useEffect(() => {
-    if (photos.length === 0) return;
+    if (photos.length === 0) {
+      prefilled.current = false;
+      return;
+    }
     const key = photos.map((p) => p.preview.length).join(",");
     if (analyzedFor.current === key) return;
     analyzedFor.current = key;
+    prefilled.current = false;
     setAiError(false);
     aiPromise.current = fetch("/api/analyze", {
       method: "POST",
@@ -136,6 +142,7 @@ export default function SellPage() {
       setTimeout(() => {
         if (result) {
           setAi(result);
+          setFlowerTypes([...new Set(result.analysis.flowers.map((f) => f.type))]);
           if (!prefilled.current) {
             prefilled.current = true;
             setTitle(result.analysis.suggestedTitle);
@@ -143,12 +150,43 @@ export default function SellPage() {
           }
           setStep("ai");
         } else {
-          setStep("details");
+          goToDetails();
         }
       }, wait);
     });
     return () => clearInterval(interval);
   }, [step]);
+
+  async function requestLocation() {
+    setLocationStatus("loading");
+    setLocationError("");
+    try {
+      const coords = await getSellerCoordinates();
+      setCoordinates(coords);
+      const area = await resolveSellerNeighborhood(coords);
+      setNeighborhood(area);
+      setLocationStatus("ready");
+    } catch (err) {
+      setLocationStatus("denied");
+      setLocationError(
+        err instanceof Error ? err.message : "Could not detect your location.",
+      );
+    }
+  }
+
+  function goToDetails() {
+    setStep("details");
+    if (!coordinates) void requestLocation();
+  }
+
+  function retryAnalyze() {
+    analyzedFor.current = "";
+    setAiError(false);
+    setAi(null);
+    setTick(0);
+    setPhotos((prev) => [...prev]);
+    setStep("analyzing");
+  }
 
   function goBack() {
     if (step === "ai") setStep("photos");
@@ -157,51 +195,46 @@ export default function SellPage() {
   }
 
   async function publish() {
-    if (config.hasSupabase && !signedIn) {
-      setPublishError("Sign in to publish your listing.");
+    if (!config.hasSupabase) {
+      setPublishError("Configure Supabase to publish listings.");
+      return;
+    }
+    if (!signedIn) {
+      router.push("/sign-in?next=/sell");
+      return;
+    }
+    if (!coordinates) {
+      setPublishError("Allow location access so buyers can find your bouquet nearby.");
+      setStep("details");
       return;
     }
     setPublishing(true);
     setPublishError("");
     saveProfile({ displayName: sellerName, contact: sellerContact });
 
+    let uploadedPaths: string[] = [];
     try {
-      let photoPayload: string[];
-      if (config.hasSupabase) {
-        const userId = authProfile.id;
-        if (!userId || userId === "server") {
-          throw new Error("Sign in to publish your listing.");
-        }
-        photoPayload = await uploadListingPhotos(
-          photos.map((p) => p.blob),
-          userId,
-        );
-      } else {
-        // Demo mode: persist data URLs in memory.
-        photoPayload = photos.map((p) => p.preview);
+      const userId = authProfile.id;
+      if (!userId || userId === "server") {
+        throw new Error("Sign in to publish your listing.");
       }
-
-      const headers: Record<string, string> = {
-        "content-type": "application/json",
-      };
-      if (config.demoMode) {
-        headers["x-seller-id"] = getProfile().id;
-      }
+      uploadedPaths = await uploadListingPhotos(
+        photos.map((p) => p.blob),
+        userId,
+      );
 
       const res = await fetch("/api/listings", {
         method: "POST",
-        headers,
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           title,
           description,
           priceCents: Math.round(Number(price || "0") * 100),
           currency: "EUR",
-          flowerTypes: ai
-            ? [...new Set(ai.analysis.flowers.map((f) => f.type))]
-            : ["other"],
-          photos: photoPayload,
+          flowerTypes,
+          photos: uploadedPaths,
           neighborhood,
-          coordinates: NEIGHBORHOODS[neighborhood],
+          coordinates,
           pickupMethods: pickup,
           sellerName,
           sellerContact,
@@ -210,19 +243,21 @@ export default function SellPage() {
         }),
       });
       if (!res.ok) {
+        await removeListingPhotos(uploadedPaths);
+        uploadedPaths = [];
         const data = (await res.json().catch(() => null)) as {
           issues?: { message: string }[];
           error?: string;
         } | null;
         if (res.status === 401) {
-          setPublishError("Sign in to publish your listing.");
-        } else {
-          setPublishError(
-            data?.issues?.[0]?.message ??
-              data?.error ??
-              "Could not publish — check the fields.",
-          );
+          router.push("/sign-in?next=/sell");
+          return;
         }
+        setPublishError(
+          data?.issues?.[0]?.message ??
+            data?.error ??
+            "Could not publish — check the fields.",
+        );
         setStep("details");
         return;
       }
@@ -230,6 +265,9 @@ export default function SellPage() {
       setPublished(data.listing);
       setStep("success");
     } catch (err) {
+      if (uploadedPaths.length > 0) {
+        await removeListingPhotos(uploadedPaths);
+      }
       setPublishError(
         err instanceof Error ? err.message : "Could not publish — try again.",
       );
@@ -243,11 +281,22 @@ export default function SellPage() {
     title.trim().length >= 3 &&
     Number(price) > 0 &&
     sellerName.trim().length > 0 &&
-    sellerContact.trim().length >= 3;
+    sellerContact.trim().length >= 3 &&
+    neighborhood.trim().length >= 2 &&
+    coordinates !== null &&
+    flowerTypes.length > 0;
   const color = ai ? freshColor(ai.freshness.score) : "var(--fresh-very)";
 
   return (
     <main className="mx-auto max-w-[608px] px-4 pb-16 pt-6 lg:pt-9">
+      {!config.hasSupabase && (
+        <div className="mb-6 rounded-2xl border border-line bg-surface-tint p-4 text-[14px] text-ink-2">
+          Configure Supabase to sell bouquets. Run{" "}
+          <code className="text-[13px]">supabase start</code>, copy keys to{" "}
+          <code className="text-[13px]">.env</code>, then{" "}
+          <code className="text-[13px]">supabase db reset</code> for seed listings.
+        </div>
+      )}
       {/* Progress header */}
       {step !== "success" && (
         <div className="mb-6 flex items-center gap-4">
@@ -453,7 +502,7 @@ export default function SellPage() {
           <Button
             fullWidth
             className="mt-5 !h-14 !rounded-2xl !text-base"
-            onClick={() => setStep("details")}
+            onClick={() => goToDetails()}
           >
             Looks right — continue
           </Button>
@@ -476,6 +525,40 @@ export default function SellPage() {
             <p className="rounded-xl bg-petal-tint px-4 py-3 text-[13px]">
               {publishError}
             </p>
+          )}
+          {(aiError || !ai) && (
+            <div>
+              <span className="mb-1.5 block text-[13px] font-medium">
+                Flower type
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {FLOWER_TYPES.map((type) => (
+                  <Chip
+                    key={type}
+                    label={FLOWER_LABELS[type]}
+                    selected={flowerTypes.includes(type)}
+                    onClick={() =>
+                      setFlowerTypes((prev) =>
+                        prev.includes(type)
+                          ? prev.length > 1
+                            ? prev.filter((t) => t !== type)
+                            : prev
+                          : [...prev, type],
+                      )
+                    }
+                  />
+                ))}
+              </div>
+              {aiError && (
+                <button
+                  type="button"
+                  onClick={retryAnalyze}
+                  className="mt-3 text-[13px] font-semibold text-stem hover:text-stem-deep"
+                >
+                  Retry AI analysis
+                </button>
+              )}
+            </div>
           )}
           <Field label={ai ? "Title · AI suggested" : "Title"}>
             <TextInput
@@ -514,19 +597,46 @@ export default function SellPage() {
           </div>
           <div>
             <Field label="Pickup area">
-              <Select
+              <TextInput
                 value={neighborhood}
                 onChange={(e) => setNeighborhood(e.target.value)}
-              >
-                {Object.keys(NEIGHBORHOODS).map((n) => (
-                  <option key={n}>{n}</option>
-                ))}
-              </Select>
+                placeholder={
+                  locationStatus === "loading"
+                    ? "Detecting your area…"
+                    : "Your neighborhood"
+                }
+                disabled={locationStatus === "loading"}
+              />
             </Field>
-            <p className="mt-1.5 text-xs text-faint">
-              Buyers see your neighborhood &amp; distance — never your exact
-              address.
-            </p>
+            {locationStatus === "loading" && (
+              <p className="mt-1.5 text-xs text-ink-soft">
+                Using your location to suggest a pickup area…
+              </p>
+            )}
+            {(locationStatus === "denied" || locationStatus === "error") && (
+              <div className="mt-2 space-y-2">
+                <p className="text-xs text-petal">
+                  {locationError ||
+                    "Location is required so buyers can find your bouquet nearby."}
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setCoordinates(null);
+                    void requestLocation();
+                  }}
+                >
+                  Allow location
+                </Button>
+              </div>
+            )}
+            {locationStatus === "ready" && (
+              <p className="mt-1.5 text-xs text-faint">
+                Buyers see your neighborhood &amp; distance — never your exact
+                address. You can edit the label above.
+              </p>
+            )}
           </div>
           <div>
             <span className="mb-1.5 block text-[13px] font-medium">Pickup</span>
@@ -636,7 +746,7 @@ export default function SellPage() {
                 still works without an account.
               </p>
               <Link href="/sign-in?next=/sell" className="mt-3 inline-block">
-                <Button variant="secondary">Sign in with email</Button>
+                <Button variant="secondary">Sign in</Button>
               </Link>
             </div>
           )}
@@ -645,7 +755,7 @@ export default function SellPage() {
             fullWidth
             className="mt-6 !h-14 !rounded-2xl !text-base"
             loading={publishing}
-            disabled={config.hasSupabase && !signedIn}
+            disabled={!config.hasSupabase || !signedIn}
             onClick={() => void publish()}
           >
             Publish listing

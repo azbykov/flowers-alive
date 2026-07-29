@@ -23,9 +23,9 @@ Manual account wiring: [provisioning.md](./provisioning.md).
 6. **Real AI Gateway key + prompt calibration** on live bouquet photos; the
    prompt (`src/lib/ai/openaiProvider.ts`) is untested against real data.
 7. **Playwright e2e** for the critical path: sell → browse → contact → sold.
-8. **Un-hardcode geography.** Neighborhoods are 8 Amsterdam constants in
-   `src/app/sell/page.tsx`. Minimum: reverse-geocode the seller's location or
-   allow free-form neighborhood input.
+8. **Un-hardcode geography.** ~~Neighborhoods are 8 Amsterdam constants in
+   `src/app/sell/page.tsx`.~~ Done: GPS + Nominatim reverse-geocode via
+   `/api/geocode`; seller can edit the area label.
 9. **Content moderation.** The vision request already sees every photo — add
    a "not flowers / unsafe" flag to the response schema and block publishing.
 10. **Listing expiry.** Flowers live for days; auto-transition to `expired`

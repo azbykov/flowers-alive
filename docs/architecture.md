@@ -6,12 +6,13 @@
 src/
   domain/        Pure business logic. No IO, no framework imports. Fully unit-tested.
   lib/
-    db/          Repository interface + implementations (in-memory demo, Supabase).
+    db/          Repository interface + Supabase implementation.
     ai/          AI pipeline modules + providers (OpenAI / AI Gateway, mock).
-    auth.ts      getSessionSellerId — demo header vs Supabase session.
+    auth.ts      getSessionSellerId from Supabase session cookie.
+    geocode/     Nominatim reverse-geocode (server, /api/geocode).
     supabase/    Browser + server SSR clients; session refresh helper.
-    client/      Browser stores: profile, favorites, geolocation, Storage upload.
-    config.ts    Env detection: demo mode vs production services.
+    client/      Browser stores: profile, favorites, geolocation, seller GPS, Storage.
+    config.ts    Env detection for Supabase and AI providers.
   proxy.ts       Next.js 16 Proxy — refreshes the Supabase auth cookie.
   app/
     api/         Route handlers — thin: validate (zod) → auth → domain/repo → respond.
@@ -50,23 +51,19 @@ visual output, don't copy their internals. `design/design-system.md` and
 
 ## Modes
 
-The app selects services from env at startup (`src/lib/config.ts`):
+The app requires Supabase for data, auth, and storage (`NEXT_PUBLIC_SUPABASE_*`).
+Local development: `supabase start` + `supabase db reset` loads seed listings
+from `supabase/seed.sql`. CI builds compile without Supabase env (no runtime DB).
 
-- **Demo mode** (no Supabase env vars): seeded in-memory repository (survives
-  dev hot-reload via `globalThis`, resets on restart), deterministic mock AI,
-  local device profile via `x-seller-id`. Fully clickable with zero setup.
-- **Production mode**: `NEXT_PUBLIC_SUPABASE_URL` + anon key → Postgres,
-  Auth, Storage; `AI_GATEWAY_API_KEY` (preferred) or `OPENAI_API_KEY` → real
-  vision via Vercel AI Gateway / direct OpenAI.
-
-Both modes run the exact same domain code and UI.
+Vision AI: `AI_GATEWAY_API_KEY` (preferred) or `OPENAI_API_KEY` → real analysis;
+without keys → deterministic mock provider (same UI, not listing seed).
 
 ## Identity & auth
 
-| Mode | Identity | Mutating APIs |
+| Context | Identity | Mutating APIs |
 | --- | --- | --- |
-| Demo | localStorage profile id → `x-seller-id` header | Accepted as-is |
-| Production | Supabase Auth magic link; session cookie via `@supabase/ssr` | `getSessionSellerId` reads the cookie; 401 if absent |
+| Signed in | Supabase Auth (Google or magic link); session cookie via `@supabase/ssr` | `getSessionSellerId` reads the cookie; 401 if absent |
+| Unsigned | No session | Read-only browse; publish requires sign-in |
 
 Flow:
 

@@ -1,4 +1,4 @@
-/** Central env detection. Demo mode keeps the product fully usable with zero setup. */
+/** Central env detection. Supabase env vars are required for data/auth/storage. */
 const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1";
 const VISION_MODEL_DIRECT = "gpt-4o-mini";
 const VISION_MODEL_GATEWAY = "openai/gpt-4o-mini";
@@ -18,9 +18,6 @@ export const config = {
   },
   get hasOpenAI(): boolean {
     return this.hasAiGateway || Boolean(this.openaiApiKey);
-  },
-  get demoMode(): boolean {
-    return !this.hasSupabase;
   },
   /** Client settings for the vision provider (Gateway preferred). */
   get vision(): {
@@ -45,5 +42,5 @@ export const config = {
   },
 } as const;
 
-/** Default map center for demo mode (Amsterdam) — replaced by real geolocation when granted. */
+/** Browse fallback when geolocation is denied — not used for sell publish. */
 export const DEFAULT_CITY_CENTER = { lat: 52.3702, lng: 4.8952 };

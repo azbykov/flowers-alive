@@ -8,12 +8,15 @@ Under a minute.
 
 ```bash
 npm install
+supabase start
+# Copy NEXT_PUBLIC_SUPABASE_URL and anon key from `supabase status` into .env
+supabase db reset   # migrations + seed listings (Amsterdam)
 npm run dev
 ```
 
-Open http://localhost:3000. **No configuration needed** — without env vars the
-app runs in demo mode: seeded listings (Amsterdam), deterministic mock AI, and
-a local device profile. Everything is clickable end to end, mobile and desktop.
+Open http://localhost:3000. **Supabase is required** for browse, auth, and sell.
+Local listings come from `supabase/seed.sql` after `db reset`. Without AI keys,
+vision analysis uses a deterministic mock provider.
 
 ## Production services
 
@@ -59,11 +62,11 @@ Short checklist: [docs/production-roadmap.md](docs/production-roadmap.md).
 | `docs/production-roadmap.md` | Short checklist |
 | `src/domain/` | Pure business logic (unit-tested) |
 | `src/lib/ai/` | AI pipeline + Gateway/OpenAI/mock providers |
-| `src/lib/db/` | Repository interface, memory + Supabase repos |
+| `src/lib/db/` | Repository interface + Supabase repo (+ test helper) |
 | `src/lib/supabase/` | SSR browser/server clients |
-| `src/lib/auth.ts` | Session seller id (demo header vs Auth) |
+| `src/lib/auth.ts` | Session seller id from Supabase Auth cookie |
 | `src/proxy.ts` | Session cookie refresh (Next.js 16 Proxy) |
-| `src/lib/client/` | Profile, favorites, geolocation, Storage upload |
+| `src/lib/client/` | Profile, favorites, geolocation, Storage upload, seller GPS |
 | `src/app/api/` | Validated route handlers |
 | `supabase/migrations/` | Schema, RLS hardening, Storage bucket |
 | `.github/workflows/ci.yml` | lint · test · build on push/PR |
