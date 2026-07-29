@@ -59,16 +59,16 @@
   --color-sep: var(--sep);
   --color-like: var(--like);
   --color-surface-tint: var(--surface-tint);
-  --font-sans: var(--font-hanken);
-  --font-ui: var(--font-hanken);
-  --font-display: var(--font-newsreader);
-  --font-data: var(--font-space-mono);
+  --font-sans: var(--font-hanken), var(--font-noto-georgian), var(--font-noto-sans);
+  --font-ui: var(--font-hanken), var(--font-noto-georgian), var(--font-noto-sans);
+  --font-display: var(--font-newsreader), var(--font-noto-georgian), var(--font-noto-sans);
+  --font-data: var(--font-space-mono), var(--font-noto-sans);
 }
 
 body {
   background: var(--surface);
   color: var(--ink);
-  font-family: var(--font-hanken), system-ui, sans-serif;
+  font-family: var(--font-hanken), var(--font-noto-georgian), var(--font-noto-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

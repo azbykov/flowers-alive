@@ -14,7 +14,7 @@ function listing(
     title: id,
     description: "",
     priceCents,
-    currency: "EUR",
+    currency: "GEL",
     flowerTypes: ["roses"],
     photos: [],
     freshness: {

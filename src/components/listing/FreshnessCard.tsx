@@ -1,3 +1,6 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
 import type { FreshnessReport } from "@/domain/types";
 import { remainingDaysLabel } from "@/domain/freshness";
 import { freshColor } from "./freshness";
@@ -8,6 +11,8 @@ import { freshColor } from "./freshness";
  * certainty (product rule).
  */
 export function FreshnessCard({ report }: { report: FreshnessReport }) {
+  const t = useTranslations("Freshness");
+  const locale = useLocale();
   const color = freshColor(report.score);
   return (
     <section className="overflow-hidden rounded-[20px] border border-line bg-card">
@@ -16,7 +21,7 @@ export function FreshnessCard({ report }: { report: FreshnessReport }) {
           <path d="M8 2l1.6 3.4L13 6l-2.4 2.6L11 12 8 10.4 5 12l.4-3.4L3 6l3.4-.6L8 2z" strokeLinejoin="round" />
         </svg>
         <span className="text-[12px] font-bold uppercase tracking-[0.5px] text-muted">
-          AI freshness estimate
+          {t("title")}
         </span>
       </div>
 
@@ -25,7 +30,7 @@ export function FreshnessCard({ report }: { report: FreshnessReport }) {
           <div className="font-data text-[40px] font-bold leading-none" style={{ color }}>
             {report.score}%
           </div>
-          <div className="mt-0.5 text-[11px] text-muted">fresh</div>
+          <div className="mt-0.5 text-[11px] text-muted">{t("fresh")}</div>
         </div>
         <div className="flex flex-1 flex-col justify-center gap-2.5">
           <div className="h-2 overflow-hidden rounded-full bg-track">
@@ -35,11 +40,13 @@ export function FreshnessCard({ report }: { report: FreshnessReport }) {
             />
           </div>
           <div className="flex justify-between text-[13.5px]">
-            <span className="text-muted">Lasts about</span>
-            <span className="font-bold text-ink">{remainingDaysLabel(report)}</span>
+            <span className="text-muted">{t("lastsAbout")}</span>
+            <span className="font-bold text-ink">
+              {remainingDaysLabel(report, locale)}
+            </span>
           </div>
           <div className="flex justify-between text-[13.5px]">
-            <span className="text-muted">Confidence</span>
+            <span className="text-muted">{t("confidence")}</span>
             <span className="font-data font-bold text-ink">{report.confidence}%</span>
           </div>
         </div>
@@ -49,7 +56,7 @@ export function FreshnessCard({ report }: { report: FreshnessReport }) {
         <div className="px-[18px] pb-[18px]">
           <div className="rounded-xl bg-surface-tint px-4 py-3.5">
             <div className="mb-2 text-[11.5px] font-bold text-muted">
-              Why this estimate
+              {t("why")}
             </div>
             {report.signals.map((signal) => (
               <div key={signal} className="mb-1.5 flex items-start gap-2">
@@ -60,7 +67,7 @@ export function FreshnessCard({ report }: { report: FreshnessReport }) {
               </div>
             ))}
             <div className="mt-2 text-[11.5px] leading-snug text-faint">
-              Estimate, not a guarantee. Always check flowers in person at pickup.
+              {t("disclaimer")}
             </div>
           </div>
         </div>

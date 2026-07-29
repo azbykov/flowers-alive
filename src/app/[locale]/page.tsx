@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type {
   Coordinates,
   FlowerType,
@@ -9,7 +10,9 @@ import type {
   PublicListing,
   SortKey,
 } from "@/domain/types";
-import { FLOWER_LABELS, FLOWER_TYPES, PICKUP_LABELS, PICKUP_METHODS } from "@/domain/types";
+import { FLOWER_TYPES, PICKUP_METHODS } from "@/domain/types";
+import { APP_CURRENCY, BROWSE_MAX_PRICE_GEL } from "@/domain/currency";
+import { formatPrice } from "@/domain/format";
 import { getViewerLocation } from "@/lib/client/location";
 import { BouquetCard } from "@/components/listing/BouquetCard";
 import { BrowseMap } from "@/components/map/lazy";
@@ -23,21 +26,20 @@ type BrowseView = "list" | "map";
 
 const VIEW_STORAGE_KEY = "slf-browse-view";
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "distance", label: "Distance" },
-  { value: "freshness", label: "Freshness" },
-  { value: "newest", label: "Newest" },
-  { value: "price", label: "Price" },
-];
+const SORT_KEYS: SortKey[] = ["distance", "freshness", "newest", "price"];
 
 function SortModal({
   sort,
   onPick,
   onClose,
+  sortOptions,
+  title,
 }: {
   sort: SortKey;
   onPick: (s: SortKey) => void;
   onClose: () => void;
+  sortOptions: { value: SortKey; label: string }[];
+  title: string;
 }) {
   return (
     <div
@@ -48,10 +50,10 @@ function SortModal({
         className="w-full max-w-[380px] animate-[slfrise_.2s_ease-out] rounded-[20px] bg-surface px-6 pb-4 pt-5 shadow-[0_30px_70px_-20px_rgba(42,36,30,0.4)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
-        aria-label="Sort by"
+        aria-label={title}
       >
-        <div className="mb-3 font-display text-[21px] text-ink">Sort by</div>
-        {SORT_OPTIONS.map((o) => (
+        <div className="mb-3 font-display text-[21px] text-ink">{title}</div>
+        {sortOptions.map((o) => (
           <button
             key={o.value}
             onClick={() => onPick(o.value)}
@@ -77,15 +79,22 @@ function SortModal({
 function ViewToggle({
   view,
   onChange,
+  listLabel,
+  mapLabel,
+  ariaLabel,
 }: {
   view: BrowseView;
   onChange: (v: BrowseView) => void;
+  listLabel: string;
+  mapLabel: string;
+  ariaLabel: string;
 }) {
+  const labels = { list: listLabel, map: mapLabel } as const;
   return (
     <div
       className="inline-flex h-11 shrink-0 rounded-xl border border-line bg-card p-1"
       role="group"
-      aria-label="Browse view"
+      aria-label={ariaLabel}
     >
       {(["list", "map"] as const).map((option) => (
         <button
@@ -93,13 +102,13 @@ function ViewToggle({
           type="button"
           onClick={() => onChange(option)}
           aria-pressed={view === option}
-          className={`rounded-lg px-3.5 text-sm font-bold capitalize transition-colors ${
+          className={`rounded-lg px-3.5 text-sm font-bold transition-colors ${
             view === option
               ? "bg-stem-tint text-stem-deep"
               : "text-ink-2 hover:text-ink"
           }`}
         >
-          {option}
+          {labels[option]}
         </button>
       ))}
     </div>
@@ -107,6 +116,12 @@ function ViewToggle({
 }
 
 export default function BrowsePage() {
+  const t = useTranslations("Browse");
+  const tBrand = useTranslations("Brand");
+  const tFlowers = useTranslations("Flowers");
+  const tPickup = useTranslations("Pickup");
+  const locale = useLocale();
+
   const [viewer, setViewer] = useState<Coordinates | null>(null);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("distance");
@@ -118,6 +133,19 @@ export default function BrowsePage() {
   const [listings, setListings] = useState<PublicListing[] | null>(null);
   const [view, setView] = useState<BrowseView>("list");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const sortOptions = SORT_KEYS.map((value) => ({
+    value,
+    label: t(
+      value === "distance"
+        ? "sortDistance"
+        : value === "freshness"
+          ? "sortFreshness"
+          : value === "newest"
+            ? "sortNewest"
+            : "sortPrice",
+    ),
+  }));
 
   useEffect(() => {
     void getViewerLocation().then(setViewer);
@@ -164,42 +192,47 @@ export default function BrowsePage() {
   }, [load, query]);
 
   const searching = query.trim().length > 0;
-  const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Distance";
+  const sortLabel =
+    sortOptions.find((o) => o.value === sort)?.label ?? t("sortDistance");
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-6 lg:max-w-[1240px] lg:px-8 lg:pt-0">
       {/* Mobile header */}
       <header className="lg:hidden">
         <h1 className="font-display text-2xl font-medium tracking-tight">
-          Second Life Flowers
+          {tBrand("full")}
         </h1>
-        <p className="mt-1 text-[13px] text-ink-soft">
-          Fresh bouquets looking for a new home near you
-        </p>
+        <p className="mt-1 text-[13px] text-ink-soft">{t("tagline")}</p>
       </header>
 
       {/* Desktop header */}
       <div className="hidden flex-wrap items-end justify-between gap-6 pb-6 pt-10 lg:flex">
         <div>
           <div className="text-[13px] font-semibold text-ink-soft">
-            {searching ? "Search results" : "Nearby"}
+            {searching ? t("searchResults") : t("nearby")}
           </div>
           <h1 className="mt-1 font-display text-[38px] font-medium leading-[1.05] text-ink">
-            {searching ? "Bouquets near you" : "Fresh today"}
+            {searching ? t("bouquetsNearYou") : t("freshToday")}
           </h1>
         </div>
         <div className="flex items-center gap-5">
           {listings !== null && (
             <span className="text-sm text-ink-soft">
-              {listings.length} bouquets nearby
+              {t("countNearby", { count: listings.length })}
             </span>
           )}
-          <ViewToggle view={view} onChange={changeView} />
+          <ViewToggle
+            view={view}
+            onChange={changeView}
+            listLabel={t("viewList")}
+            mapLabel={t("viewMap")}
+            ariaLabel={t("viewAria")}
+          />
           <button
             onClick={() => setShowSort(true)}
             className="flex h-11 items-center gap-2 rounded-xl border border-line bg-card px-4 text-sm font-bold text-ink"
           >
-            Sort: {sortLabel} <span className="text-faint">▾</span>
+            {t("sort")}: {sortLabel} <span className="text-faint">▾</span>
           </button>
         </div>
       </div>
@@ -208,14 +241,20 @@ export default function BrowsePage() {
         <div className="min-w-0 flex-1 lg:max-w-[420px]">
           <TextInput
             type="search"
-            placeholder="Search roses, tulips, neighborhoods…"
+            placeholder={t("searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search bouquets"
+            aria-label={t("searchAria")}
           />
         </div>
         <div className="lg:hidden">
-          <ViewToggle view={view} onChange={changeView} />
+          <ViewToggle
+            view={view}
+            onChange={changeView}
+            listLabel={t("viewList")}
+            mapLabel={t("viewMap")}
+            ariaLabel={t("viewAria")}
+          />
         </div>
       </div>
 
@@ -223,39 +262,43 @@ export default function BrowsePage() {
         <Select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Sort listings"
+          aria-label={t("sortAria")}
           className="!h-9 !w-auto shrink-0 rounded-full !px-3 text-[13px] lg:hidden"
         >
-          {SORT_OPTIONS.map((o) => (
+          {sortOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
         </Select>
         <Chip
-          label="Fresh 80%+"
+          label={t("freshFilter")}
           selected={freshOnly}
           onClick={() => setFreshOnly((v) => !v)}
         />
         <Chip
-          label="Under €7"
+          label={t("underPrice", {
+            price: formatPrice(BROWSE_MAX_PRICE_GEL * 100, locale, APP_CURRENCY),
+          })}
           selected={maxPrice !== null}
-          onClick={() => setMaxPrice((v) => (v === null ? 7 : null))}
+          onClick={() =>
+            setMaxPrice((v) => (v === null ? BROWSE_MAX_PRICE_GEL : null))
+          }
         />
         {PICKUP_METHODS.map((method) => (
           <Chip
             key={method}
-            label={PICKUP_LABELS[method]}
+            label={tPickup(method)}
             selected={pickup === method}
             onClick={() => setPickup((v) => (v === method ? null : method))}
           />
         ))}
       </div>
       <div className="mt-2 flex gap-2 overflow-x-auto pb-1 lg:mt-0 lg:flex-wrap lg:gap-2.5 lg:pb-7 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {FLOWER_TYPES.filter((t) => t !== "other").map((type) => (
+        {FLOWER_TYPES.filter((type) => type !== "other").map((type) => (
           <Chip
             key={type}
-            label={FLOWER_LABELS[type]}
+            label={tFlowers(type)}
             selected={flowerType === type}
             onClick={() => setFlowerType((v) => (v === type ? null : type))}
           />
@@ -268,10 +311,10 @@ export default function BrowsePage() {
         </div>
       ) : listings.length === 0 ? (
         <EmptyState
-          message="No bouquets nearby yet — be the first to share one."
+          message={t("empty")}
           action={
             <Link href="/sell">
-              <Button>Sell a bouquet</Button>
+              <Button>{t("sellCta")}</Button>
             </Link>
           }
         />
@@ -290,6 +333,8 @@ export default function BrowsePage() {
       {showSort && (
         <SortModal
           sort={sort}
+          sortOptions={sortOptions}
+          title={t("sortBy")}
           onPick={(s) => {
             setSort(s);
             setShowSort(false);

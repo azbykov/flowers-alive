@@ -1,10 +1,9 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import type { PublicListing } from "@/domain/types";
-import { FLOWER_LABELS, PICKUP_LABELS } from "@/domain/types";
 import { formatPrice, timeAgo } from "@/domain/format";
 import { distanceLabel } from "@/domain/geo";
 import { getViewerLocation } from "@/lib/client/location";
@@ -31,6 +30,11 @@ export default function ListingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const t = useTranslations("Listing");
+  const tCard = useTranslations("Card");
+  const tFlowers = useTranslations("Flowers");
+  const tPickup = useTranslations("Pickup");
+  const locale = useLocale();
   const router = useRouter();
   const { profile } = useAuthProfile();
   const [listing, setListing] = useState<PublicListing | null | "missing">(null);
@@ -82,10 +86,10 @@ export default function ListingPage({
     return (
       <EmptyState
         emoji="🥀"
-        message="This bouquet is gone — maybe it already found a home."
+        message={t("missing")}
         action={
           <Button variant="secondary" onClick={() => router.push("/")}>
-            Back to browse
+            {t("backToBrowse")}
           </Button>
         }
       />
@@ -94,15 +98,16 @@ export default function ListingPage({
 
   const sold = listing.status === "sold";
   const seller = listing.seller;
-  const sellerName = seller.displayName || "a neighbor";
+  const sellerName = seller.displayName || t("neighbor");
+  const dist = distanceLabel(listing.distanceKm, locale);
 
   const contactAction = isOwner ? (
     <Button fullWidth variant="secondary" loading={marking} onClick={markSold}>
-      Mark as sold
+      {t("markSold")}
     </Button>
   ) : showContact ? (
     <div className="flex-1 rounded-2xl bg-stem-tint px-4 py-3 text-center">
-      <span className="text-[13px] text-ink-soft">Reach the seller at </span>
+      <span className="text-[13px] text-ink-soft">{t("reachSeller")} </span>
       <span className="font-semibold">{seller.contact}</span>
     </div>
   ) : (
@@ -111,7 +116,7 @@ export default function ListingPage({
       className="!h-[58px] !rounded-2xl !text-[17px]"
       onClick={() => setShowContact(true)}
     >
-      Contact {sellerName}
+      {t("contact", { name: sellerName })}
     </Button>
   );
 
@@ -122,7 +127,7 @@ export default function ListingPage({
           href="/"
           className="flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink"
         >
-          ‹ Back to browse
+          ‹ {t("backToBrowse")}
         </Link>
       </div>
 
@@ -143,14 +148,16 @@ export default function ListingPage({
             </div>
             <Link
               href="/"
-              aria-label="Back to browse"
+              aria-label={t("backToBrowse")}
               className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-card/90 shadow"
             >
               ←
             </Link>
             {sold && (
               <div className="absolute inset-0 flex items-center justify-center bg-ink/40">
-                <span className="rounded-full bg-card px-5 py-2 font-semibold">Sold</span>
+                <span className="rounded-full bg-card px-5 py-2 font-semibold">
+                  {tCard("sold")}
+                </span>
               </div>
             )}
           </div>
@@ -172,7 +179,9 @@ export default function ListingPage({
               )}
               {sold && (
                 <div className="absolute inset-0 flex items-center justify-center bg-ink/40">
-                  <span className="rounded-full bg-card px-5 py-2 font-semibold">Sold</span>
+                  <span className="rounded-full bg-card px-5 py-2 font-semibold">
+                    {tCard("sold")}
+                  </span>
                 </div>
               )}
             </div>
@@ -182,7 +191,7 @@ export default function ListingPage({
                   <button
                     key={photo.id}
                     onClick={() => setPhotoIdx(i)}
-                    aria-label={`Photo ${i + 1}`}
+                    aria-label={t("photoAria", { n: i + 1 })}
                     className={`flex-1 overflow-hidden rounded-[14px] border-2 ${
                       i === photoIdx ? "border-stem" : "border-transparent"
                     }`}
@@ -205,23 +214,22 @@ export default function ListingPage({
               </h1>
               <p className="mt-1.5 text-[13px] text-ink-soft lg:text-[14.5px]">
                 {listing.neighborhood}
-                {listing.distanceKm !== null &&
-                  ` · ${distanceLabel(listing.distanceKm)} away`}
+                {dist && ` · ${t("away", { distance: dist })}`}
                 {" · "}
-                {timeAgo(listing.createdAt)}
+                {timeAgo(listing.createdAt, locale)}
               </p>
             </div>
             <span className="whitespace-nowrap text-xl font-bold lg:text-[30px]">
-              {formatPrice(listing.priceCents, listing.currency)}
+              {formatPrice(listing.priceCents, locale, listing.currency)}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {listing.flowerTypes.map((type) => (
-              <Chip key={type} label={FLOWER_LABELS[type]} />
+              <Chip key={type} label={tFlowers(type)} />
             ))}
             {listing.pickupMethods.map((method) => (
-              <Chip key={method} label={`📍 ${PICKUP_LABELS[method]}`} />
+              <Chip key={method} label={`📍 ${tPickup(method)}`} />
             ))}
           </div>
 
@@ -229,7 +237,9 @@ export default function ListingPage({
 
           {listing.description && (
             <div>
-              <h2 className="font-display text-[20px] font-medium">From the seller</h2>
+              <h2 className="font-display text-[20px] font-medium">
+                {t("fromSeller")}
+              </h2>
               <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
                 {listing.description}
               </p>
@@ -237,7 +247,9 @@ export default function ListingPage({
           )}
 
           <div>
-            <h2 className="font-display text-[20px] font-medium">Pickup area</h2>
+            <h2 className="font-display text-[20px] font-medium">
+              {t("pickupArea")}
+            </h2>
             <div className="mt-2">
               <ApproximateMap
                 mapPoint={listing.mapPoint}
@@ -255,9 +267,7 @@ export default function ListingPage({
             </span>
             <div className="flex-1">
               <div className="text-base font-bold">{sellerName}</div>
-              <div className="text-[13px] text-ink-soft">
-                You arrange pickup together
-              </div>
+              <div className="text-[13px] text-ink-soft">{t("arrangePickup")}</div>
             </div>
           </div>
 

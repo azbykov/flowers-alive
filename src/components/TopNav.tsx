@@ -1,20 +1,23 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useAuthProfile } from "@/lib/client/profile";
-
-const NAV_ITEMS = [
-  { href: "/", label: "Browse" },
-  { href: "/favorites", label: "Saved" },
-  { href: "/profile", label: "Profile" },
-];
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 /** Desktop shell (≥lg) from the desktop handoff; mobile keeps the bottom nav. */
 export function TopNav() {
+  const t = useTranslations("Nav");
+  const tBrand = useTranslations("Brand");
   const pathname = usePathname();
   const { profile, signedIn, loading } = useAuthProfile();
   const initial = profile.displayName.trim().charAt(0).toUpperCase() || "✿";
+
+  const NAV_ITEMS = [
+    { href: "/", label: t("browse") },
+    { href: "/favorites", label: t("saved") },
+    { href: "/profile", label: t("profile") },
+  ] as const;
 
   return (
     <header className="sticky top-0 z-50 hidden border-b border-line bg-surface/90 backdrop-blur-xl lg:block">
@@ -24,9 +27,9 @@ export function TopNav() {
             S
           </span>
           <span className="font-display text-[19px] font-medium leading-none text-ink">
-            Second Life
+            {tBrand("name")}
             <br />
-            <span className="text-[12px] text-ink-soft">Flowers</span>
+            <span className="text-[12px] text-ink-soft">{tBrand("flowers")}</span>
           </span>
         </Link>
 
@@ -61,14 +64,15 @@ export function TopNav() {
             <path d="M12.5 12.5L16 16" strokeLinecap="round" />
           </svg>
           <span className="whitespace-nowrap text-[14.5px] text-faint">
-            Search bouquets nearby…
+            {t("searchPlaceholder")}
           </span>
         </Link>
 
         <div className="ml-auto flex shrink-0 items-center gap-3">
+          <LanguageSwitcher />
           <Link
             href="/favorites"
-            aria-label="Saved bouquets"
+            aria-label={t("savedAria")}
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-card"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.7" strokeLinejoin="round">
@@ -82,19 +86,19 @@ export function TopNav() {
             <svg width="18" height="18" viewBox="0 0 26 26" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round">
               <path d="M13 6v14M6 13h14" />
             </svg>
-            Sell flowers
+            {t("sellFlowers")}
           </Link>
           {!loading && !signedIn ? (
             <Link
               href="/sign-in"
               className="flex h-11 items-center rounded-xl border border-line bg-card px-4 text-[14px] font-semibold text-ink hover:border-stem/40"
             >
-              Sign in
+              {t("signIn")}
             </Link>
           ) : (
             <Link
               href="/profile"
-              aria-label="Profile"
+              aria-label={t("profile")}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-stem to-stem-deep font-display text-[17px] text-white"
             >
               {initial}

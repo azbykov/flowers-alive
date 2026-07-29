@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { PublicListing } from "@/domain/types";
 import { formatPrice } from "@/domain/format";
 import { remainingDaysLabel } from "@/domain/freshness";
+import { distanceLabel } from "@/domain/geo";
 import { toggleFavorite, useFavorite } from "@/lib/client/favorites";
 import { freshColor } from "./freshness";
 
@@ -13,11 +15,9 @@ import { freshColor } from "./freshness";
  * 2-column grids.
  */
 
-function distanceText(km: number): string {
-  return km < 0.1 ? "100 m" : `${km.toFixed(1)} km`;
-}
-
 export function BouquetCard({ listing }: { listing: PublicListing }) {
+  const t = useTranslations("Card");
+  const locale = useLocale();
   const faved = useFavorite(listing.id);
 
   const cover = listing.photos[0];
@@ -43,7 +43,7 @@ export function BouquetCard({ listing }: { listing: PublicListing }) {
         {sold ? (
           <div className="absolute inset-0 flex items-center justify-center bg-ink-warm/40">
             <span className="rounded-full bg-card px-4 py-1.5 text-[13px] font-semibold text-ink-warm">
-              Sold
+              {t("sold")}
             </span>
           </div>
         ) : (
@@ -64,7 +64,7 @@ export function BouquetCard({ listing }: { listing: PublicListing }) {
             )}
             <button
               type="button"
-              aria-label={faved ? "Remove from favorites" : "Save to favorites"}
+              aria-label={faved ? t("removeFavorite") : t("saveFavorite")}
               aria-pressed={faved}
               onClick={(e) => {
                 e.preventDefault();
@@ -93,7 +93,7 @@ export function BouquetCard({ listing }: { listing: PublicListing }) {
             {listing.title}
           </span>
           <span className="whitespace-nowrap text-[15px] font-bold text-ink-warm">
-            {formatPrice(listing.priceCents, listing.currency)}
+            {formatPrice(listing.priceCents, locale, listing.currency)}
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-[12.5px] text-muted">
@@ -101,13 +101,13 @@ export function BouquetCard({ listing }: { listing: PublicListing }) {
           {listing.distanceKm !== null && (
             <>
               <span className="h-[3px] w-[3px] rounded-full bg-sep" />
-              <span>{distanceText(listing.distanceKm)}</span>
+              <span>{distanceLabel(listing.distanceKm, locale)}</span>
             </>
           )}
           {fresh && !sold && (
             <>
               <span className="h-[3px] w-[3px] rounded-full bg-sep" />
-              <span style={{ color }}>{remainingDaysLabel(fresh)}</span>
+              <span style={{ color }}>{remainingDaysLabel(fresh, locale)}</span>
             </>
           )}
         </div>

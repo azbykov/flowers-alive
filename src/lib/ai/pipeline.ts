@@ -5,7 +5,8 @@ import type {
   IdentifiedFlower,
   QualityRating,
 } from "@/domain/types";
-import { FLOWER_TYPES, FLOWER_LABELS } from "@/domain/types";
+import { FLOWER_TYPES } from "@/domain/types";
+import { aiCopy, flowerLabel } from "./localeCopy";
 import type { AiVisionProvider, AnalyzeResult, ImageObservation } from "./types";
 
 /**
@@ -58,27 +59,31 @@ function estimateFreshness(obs: ImageObservation): FreshnessReport {
 
 // -- Photo Quality Checker ----------------------------------------------------
 
-function checkPhotoQuality(obs: ImageObservation): {
+function checkPhotoQuality(
+  obs: ImageObservation,
+  locale: string,
+): {
   rating: QualityRating;
   suggestions: string[];
 } {
+  const copy = aiCopy(locale);
   const suggestions: string[] = [];
   let score = 3;
   if (obs.photo.sharpness === "blurry") {
     score -= 2;
-    suggestions.push("The photo looks blurry — hold the phone steady and retake it.");
+    suggestions.push(copy.blurry);
   } else if (obs.photo.sharpness === "acceptable") {
     score -= 1;
   }
   if (obs.photo.lighting === "dim") {
     score -= 1;
-    suggestions.push("Improve lighting — daylight near a window works best.");
+    suggestions.push(copy.dimLight);
   } else if (obs.photo.lighting === "harsh") {
-    suggestions.push("Avoid direct harsh light to keep colors natural.");
+    suggestions.push(copy.harshLight);
   }
   if (obs.photo.framing === "partially cropped") {
     score -= 1;
-    suggestions.push("Step back so the whole bouquet fits in the frame.");
+    suggestions.push(copy.cropped);
   }
   const rating: QualityRating =
     score >= 3 ? "excellent" : score === 2 ? "good" : score === 1 ? "average" : "poor";
@@ -91,23 +96,25 @@ function composeListing(
   flowers: IdentifiedFlower[],
   types: FlowerType[],
   obs: ImageObservation,
+  locale: string,
 ): { title: string; description: string } {
+  const copy = aiCopy(locale);
   const primary = flowers[0];
   const label = primary
-    ? primary.name || FLOWER_LABELS[primary.type]
-    : "Fresh bouquet";
-  const colors = obs.colorPalette.slice(0, 2).join(" and ");
+    ? primary.name || flowerLabel(primary.type, locale)
+    : copy.freshBouquet;
+  const colors = obs.colorPalette.slice(0, 2).join(copy.and);
   const title = types.includes("mixed")
-    ? `Mixed bouquet with ${label.toLowerCase()}`
+    ? copy.mixedWith(label)
     : colors
-      ? `${colors} ${label.toLowerCase()}`.replace(/^./, (c) => c.toUpperCase())
+      ? copy.colored(colors, label)
       : label;
   const parts = [
     primary?.count
-      ? `${primary.count} ${label.toLowerCase()} looking for a new home.`
-      : `A lovely bouquet looking for a new home.`,
+      ? copy.countLooking(primary.count, label)
+      : copy.looking,
     obs.petalCondition[0] ? `${capitalize(obs.petalCondition[0])}.` : "",
-    "Pick it up nearby and enjoy it for days.",
+    copy.pickupLine,
   ].filter(Boolean);
   return { title: title.slice(0, 80), description: parts.join(" ") };
 }
@@ -133,20 +140,24 @@ function overallListingQuality(
 export async function analyzeBouquet(
   imagesBase64: string[],
   provider: AiVisionProvider,
+  locale: string = "en",
 ): Promise<AnalyzeResult> {
-  const observation = await provider.observe(imagesBase64);
+  const observation = await provider.observe(imagesBase64, locale);
 
   const flowers = identifyFlowers(observation);
   const flowerTypes = classifyBouquet(flowers);
   const freshness = estimateFreshness(observation);
-  const photoQuality = checkPhotoQuality(observation);
-  const { title, description } = composeListing(flowers, flowerTypes, observation);
+  const photoQuality = checkPhotoQuality(observation, locale);
+  const { title, description } = composeListing(
+    flowers,
+    flowerTypes,
+    observation,
+    locale,
+  );
 
   const suggestions = [...photoQuality.suggestions];
   if (observation.visibleDamage.length > 0) {
-    suggestions.push(
-      "Some flowers appear damaged — mention it honestly in the description.",
-    );
+    suggestions.push(aiCopy(locale).damaged);
   }
 
   const analysis: BouquetAnalysis = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
 
 const MAX_PHOTOS = 4;
 const MAX_BYTES = 4 * 1024 * 1024;
@@ -39,6 +40,7 @@ interface PhotoUploadProps {
 }
 
 export function PhotoUpload({ photos, onChange }: PhotoUploadProps) {
+  const t = useTranslations("Sell");
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFiles(files: FileList | null) {
@@ -75,9 +77,9 @@ export function PhotoUpload({ photos, onChange }: PhotoUploadProps) {
             📸
           </span>
           <span className="text-[15px] font-medium text-ink">
-            Snap your bouquet
+            {t("snapTitle")}
           </span>
-          <span className="text-[13px]">Up to {MAX_PHOTOS} photos</span>
+          <span className="text-[13px]">{t("snapHint", { count: MAX_PHOTOS })}</span>
         </button>
       ) : (
         <div className="grid grid-cols-2 gap-2">
@@ -104,7 +106,7 @@ export function PhotoUpload({ photos, onChange }: PhotoUploadProps) {
               type="button"
               onClick={() => inputRef.current?.click()}
               className="flex aspect-[4/3] items-center justify-center rounded-2xl border-2 border-dashed border-line text-3xl text-ink-soft hover:border-stem/50"
-              aria-label="Add another photo"
+              aria-label={t("addPhoto")}
             >
               +
             </button>

@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const ITEMS = [
-  { href: "/", label: "Browse", icon: "🌸" },
-  { href: "/sell", label: "Sell", icon: "＋" },
-  { href: "/favorites", label: "Saved", icon: "♥" },
-  { href: "/profile", label: "Profile", icon: "👤" },
-];
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 
 export function BottomNav() {
+  const t = useTranslations("Nav");
   const pathname = usePathname();
   if (pathname.startsWith("/sell")) return null; // sell flow stays focused
+
+  const ITEMS = [
+    { href: "/", label: t("browse"), icon: "🌸" },
+    { href: "/sell", label: t("sell"), icon: "＋" },
+    { href: "/favorites", label: t("saved"), icon: "♥" },
+    { href: "/profile", label: t("profile"), icon: "👤" },
+  ] as const;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur lg:hidden">

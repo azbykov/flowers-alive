@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import type {
   BouquetAnalysis,
   Coordinates,
@@ -11,7 +11,8 @@ import type {
   PickupMethod,
   PublicListing,
 } from "@/domain/types";
-import { FLOWER_LABELS, FLOWER_TYPES, PICKUP_LABELS, PICKUP_METHODS } from "@/domain/types";
+import { FLOWER_TYPES, PICKUP_METHODS } from "@/domain/types";
+import { APP_CURRENCY } from "@/domain/currency";
 import { formatPrice } from "@/domain/format";
 import { remainingDaysLabel } from "@/domain/freshness";
 import { getProfile, saveProfile, useAuthProfile } from "@/lib/client/profile";
@@ -27,20 +28,6 @@ import { PickupMapPicker } from "@/components/map/lazy";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Field, TextArea, TextInput } from "@/components/ui/Field";
-
-const QUALITY_LABELS = {
-  excellent: "Excellent",
-  good: "Good",
-  average: "Average",
-  poor: "Poor",
-} as const;
-
-const ANALYZE_STEPS = [
-  "Detecting bouquet",
-  "Identifying flowers",
-  "Estimating freshness",
-  "Checking photo quality",
-];
 
 interface AiResult {
   analysis: BouquetAnalysis;
@@ -58,18 +45,14 @@ const STEP_PCT: Record<Step, string> = {
   success: "100%",
 };
 
-const STEP_LABEL: Record<Step, string> = {
-  photos: "1/3",
-  analyzing: "1/3",
-  ai: "2/3",
-  details: "2/3",
-  review: "3/3",
-  success: "Done",
-};
-
 type LocationStatus = "idle" | "loading" | "ready" | "denied" | "error";
 
 export default function SellPage() {
+  const t = useTranslations("Sell");
+  const tFlowers = useTranslations("Flowers");
+  const tPickup = useTranslations("Pickup");
+  const tQuality = useTranslations("Quality");
+  const locale = useLocale();
   const router = useRouter();
   const { profile: authProfile, signedIn, loading: authLoading } = useAuthProfile();
   const [step, setStep] = useState<Step>("photos");
@@ -97,6 +80,22 @@ export default function SellPage() {
   const prefilled = useRef(false);
   const geocodeDebounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const analyzeSteps = [
+    t("stepDetect"),
+    t("stepIdentify"),
+    t("stepFreshness"),
+    t("stepQuality"),
+  ];
+
+  const stepLabel: Record<Step, string> = {
+    photos: "1/3",
+    analyzing: "1/3",
+    ai: "2/3",
+    details: "2/3",
+    review: "3/3",
+    success: t("stepDone"),
+  };
+
   useEffect(() => {
     // Hydration-safe prefill from profile — must run after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -119,7 +118,10 @@ export default function SellPage() {
     aiPromise.current = fetch("/api/analyze", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ images: photos.map((p) => p.preview) }),
+      body: JSON.stringify({
+        images: photos.map((p) => p.preview),
+        locale,
+      }),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
@@ -129,13 +131,13 @@ export default function SellPage() {
         setAiError(true);
         return null;
       });
-  }, [photos]);
+  }, [photos, locale]);
 
   // Analyzing screen: advance the checklist, then move on when the result lands.
   useEffect(() => {
     if (step !== "analyzing") return;
     const interval = setInterval(
-      () => setTick((t) => Math.min(t + 1, ANALYZE_STEPS.length - 1)),
+      () => setTick((t) => Math.min(t + 1, analyzeSteps.length - 1)),
       600,
     );
     const started = Date.now();
@@ -157,6 +159,7 @@ export default function SellPage() {
       }, wait);
     });
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mirror original: only re-run on step
   }, [step]);
 
   async function requestLocation() {
@@ -210,7 +213,7 @@ export default function SellPage() {
 
   async function publish() {
     if (!config.hasSupabase) {
-      setPublishError("Configure Supabase to publish listings.");
+      setPublishError(t("errConfigure"));
       return;
     }
     if (!signedIn) {
@@ -218,7 +221,7 @@ export default function SellPage() {
       return;
     }
     if (!coordinates) {
-      setPublishError("Allow location access so buyers can find your bouquet nearby.");
+      setPublishError(t("errLocation"));
       setStep("details");
       return;
     }
@@ -230,7 +233,7 @@ export default function SellPage() {
     try {
       const userId = authProfile.id;
       if (!userId || userId === "server") {
-        throw new Error("Sign in to publish your listing.");
+        throw new Error(t("errSignIn"));
       }
       uploadedPaths = await uploadListingPhotos(
         photos.map((p) => p.blob),
@@ -244,7 +247,7 @@ export default function SellPage() {
           title,
           description,
           priceCents: Math.round(Number(price || "0") * 100),
-          currency: "EUR",
+          currency: APP_CURRENCY,
           flowerTypes,
           photos: uploadedPaths,
           neighborhood,
@@ -268,9 +271,7 @@ export default function SellPage() {
           return;
         }
         setPublishError(
-          data?.issues?.[0]?.message ??
-            data?.error ??
-            "Could not publish — check the fields.",
+          data?.issues?.[0]?.message ?? data?.error ?? t("errPublish"),
         );
         setStep("details");
         return;
@@ -283,7 +284,7 @@ export default function SellPage() {
         await removeListingPhotos(uploadedPaths);
       }
       setPublishError(
-        err instanceof Error ? err.message : "Could not publish — try again.",
+        err instanceof Error ? err.message : t("errRetry"),
       );
       setStep("details");
     } finally {
@@ -305,10 +306,7 @@ export default function SellPage() {
     <main className="mx-auto max-w-[608px] px-4 pb-16 pt-6 lg:pt-9">
       {!config.hasSupabase && (
         <div className="mb-6 rounded-2xl border border-line bg-surface-tint p-4 text-[14px] text-ink-2">
-          Configure Supabase to sell bouquets. Run{" "}
-          <code className="text-[13px]">supabase start</code>, copy keys to{" "}
-          <code className="text-[13px]">.env</code>, then{" "}
-          <code className="text-[13px]">supabase db reset</code> for seed listings.
+          {t("noSupabase")}
         </div>
       )}
       {/* Progress header */}
@@ -317,7 +315,7 @@ export default function SellPage() {
           {step === "photos" || step === "analyzing" ? (
             <Link
               href="/"
-              aria-label="Cancel"
+              aria-label={t("cancel")}
               className="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-line bg-card text-lg text-ink"
             >
               ×
@@ -325,7 +323,7 @@ export default function SellPage() {
           ) : (
             <button
               onClick={goBack}
-              aria-label="Back"
+              aria-label={t("back")}
               className="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-line bg-card text-lg text-ink"
             >
               ‹
@@ -338,7 +336,7 @@ export default function SellPage() {
             />
           </div>
           <span className="font-data text-[13px] text-ink-soft">
-            {STEP_LABEL[step]}
+            {stepLabel[step]}
           </span>
         </div>
       )}
@@ -346,11 +344,10 @@ export default function SellPage() {
       {step === "photos" && (
         <section>
           <h1 className="font-display text-[30px] font-medium leading-tight">
-            Add a few photos
+            {t("photosTitle")}
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-            Snap the bouquet in good light. AI does the rest — naming, freshness
-            and a quality check.
+            {t("photosSubtitle")}
           </p>
           <div className="mt-6">
             <PhotoUpload photos={photos} onChange={setPhotos} />
@@ -358,8 +355,7 @@ export default function SellPage() {
           <div className="mt-[18px] flex items-start gap-2.5 rounded-[14px] bg-surface-tint px-4 py-3.5">
             <span aria-hidden>💡</span>
             <span className="text-[13.5px] leading-normal text-ink-2">
-              Daylight near a window works best. Fill the frame with the bouquet
-              and keep the background simple.
+              {t("photosTip")}
             </span>
           </div>
           <Button
@@ -371,7 +367,7 @@ export default function SellPage() {
               setStep("analyzing");
             }}
           >
-            Analyze with AI
+            {t("analyze")}
           </Button>
         </section>
       )}
@@ -392,10 +388,10 @@ export default function SellPage() {
             <div className="absolute -inset-2 animate-spin rounded-full border-[3px] border-track border-t-stem" />
           </div>
           <h1 className="mt-7 font-display text-[26px] font-medium">
-            Reading your bouquet…
+            {t("analyzingTitle")}
           </h1>
           <div className="mt-5 flex flex-col items-start gap-3">
-            {ANALYZE_STEPS.map((label, i) => (
+            {analyzeSteps.map((label, i) => (
               <div
                 key={label}
                 className={`flex items-center gap-2.5 text-[14.5px] ${
@@ -423,13 +419,13 @@ export default function SellPage() {
               ✨
             </span>
             <h1 className="font-display text-[28px] font-medium">
-              Here&apos;s what AI found
+              {t("aiTitle")}
             </h1>
           </div>
 
           <div className="mt-5 rounded-[18px] border border-line bg-card p-[18px]">
             <div className="mb-3.5 text-[12px] font-bold uppercase tracking-[0.5px] text-muted">
-              Recognized flowers
+              {t("recognized")}
             </div>
             {ai.analysis.flowers.map((f) => (
               <div key={f.name || f.type} className="mb-3 flex items-center gap-3">
@@ -444,7 +440,7 @@ export default function SellPage() {
                   )}
                 </span>
                 <span className="flex-1 text-[15px] font-semibold">
-                  {f.name || FLOWER_LABELS[f.type]}
+                  {f.name || tFlowers(f.type)}
                 </span>
                 {f.count && (
                   <span className="font-data text-[12px] font-bold text-fresh-high">
@@ -454,21 +450,17 @@ export default function SellPage() {
               </div>
             ))}
             <div className="text-[12px] text-faint">
-              Overall confidence{" "}
-              <span className="font-data font-bold text-ink-2">
-                {ai.freshness.confidence}%
-              </span>{" "}
-              — you can rename anything next.
+              {t("overallConfidence", { pct: ai.freshness.confidence })}
             </div>
           </div>
 
           <div className="mt-3.5 rounded-[18px] border border-[#dbead9] bg-[#f2f7ef] p-[18px]">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[12px] font-bold uppercase tracking-[0.5px] text-fresh-high">
-                Freshness &amp; quality
+                {t("freshnessQuality")}
               </span>
               <span className="rounded-full bg-fresh-high px-2.5 py-1 text-[12px] font-bold text-white">
-                {QUALITY_LABELS[ai.analysis.listingQuality]}
+                {tQuality(ai.analysis.listingQuality)}
               </span>
             </div>
             <div className="flex items-center gap-[18px]">
@@ -483,9 +475,9 @@ export default function SellPage() {
                   />
                 </div>
                 <div className="mt-2 flex justify-between text-[13px]">
-                  <span className="text-[#5a6a55]">Lasts about</span>
+                  <span className="text-[#5a6a55]">{t("lastsAbout")}</span>
                   <span className="font-bold text-[#3a4a38]">
-                    {remainingDaysLabel(ai.freshness)}
+                    {remainingDaysLabel(ai.freshness, locale)}
                   </span>
                 </div>
               </div>
@@ -518,7 +510,7 @@ export default function SellPage() {
             className="mt-5 !h-14 !rounded-2xl !text-base"
             onClick={() => goToDetails()}
           >
-            Looks right — continue
+            {t("looksRight")}
           </Button>
         </section>
       )}
@@ -526,13 +518,15 @@ export default function SellPage() {
       {step === "details" && (
         <section className="space-y-4">
           <div>
-            <h1 className="font-display text-[28px] font-medium">Last details</h1>
+            <h1 className="font-display text-[28px] font-medium">
+              {t("detailsTitle")}
+            </h1>
             <p className="mt-1.5 text-sm text-ink-soft">
               {ai
-                ? "Name and freshness are prefilled. Just set your price."
+                ? t("detailsPrefill")
                 : aiError
-                  ? "AI analysis didn't work this time — fill in the details yourself."
-                  : "Fill in the details — it takes 30 seconds."}
+                  ? t("detailsAiFail")
+                  : t("detailsManual")}
             </p>
           </div>
           {publishError && (
@@ -543,19 +537,19 @@ export default function SellPage() {
           {(aiError || !ai) && (
             <div>
               <span className="mb-1.5 block text-[13px] font-medium">
-                Flower type
+                {t("flowerType")}
               </span>
               <div className="flex flex-wrap gap-2">
                 {FLOWER_TYPES.map((type) => (
                   <Chip
                     key={type}
-                    label={FLOWER_LABELS[type]}
+                    label={tFlowers(type)}
                     selected={flowerTypes.includes(type)}
                     onClick={() =>
                       setFlowerTypes((prev) =>
                         prev.includes(type)
                           ? prev.length > 1
-                            ? prev.filter((t) => t !== type)
+                            ? prev.filter((ft) => ft !== type)
                             : prev
                           : [...prev, type],
                       )
@@ -569,20 +563,20 @@ export default function SellPage() {
                   onClick={retryAnalyze}
                   className="mt-3 text-[13px] font-semibold text-stem hover:text-stem-deep"
                 >
-                  Retry AI analysis
+                  {t("retryAi")}
                 </button>
               )}
             </div>
           )}
-          <Field label={ai ? "Title · AI suggested" : "Title"}>
+          <Field label={ai ? t("titleAi") : t("title")}>
             <TextInput
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={80}
-              placeholder="e.g. Blush garden roses"
+              placeholder={t("titlePlaceholder")}
             />
           </Field>
-          <Field label={ai ? "Description · AI suggested" : "Description"}>
+          <Field label={ai ? t("descriptionAi") : t("description")}>
             <TextArea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -590,13 +584,15 @@ export default function SellPage() {
             />
           </Field>
           <div>
-            <span className="mb-1.5 block text-[13px] font-medium">Your price</span>
+            <span className="mb-1.5 block text-[13px] font-medium">
+              {t("yourPrice")}
+            </span>
             <div
               className={`flex h-[66px] items-center gap-1.5 rounded-[14px] border bg-card px-[18px] ${
                 Number(price) > 0 ? "border-fresh-high" : "border-line"
               }`}
             >
-              <span className="text-[26px] font-bold text-ink-soft">€</span>
+              <span className="text-[26px] font-bold text-ink-soft">₾</span>
               <input
                 value={price}
                 onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
@@ -605,33 +601,28 @@ export default function SellPage() {
                 className="w-full bg-transparent text-[28px] font-bold text-ink outline-none placeholder:text-faint"
               />
             </div>
-            <p className="mt-1.5 text-xs text-faint">
-              You decide the price. AI never suggests or sets it.
-            </p>
+            <p className="mt-1.5 text-xs text-faint">{t("priceHint")}</p>
           </div>
           <div>
-            <Field label="Pickup area">
+            <Field label={t("pickupArea")}>
               <TextInput
                 value={neighborhood}
                 onChange={(e) => setNeighborhood(e.target.value)}
                 placeholder={
                   locationStatus === "loading"
-                    ? "Detecting your area…"
-                    : "Your neighborhood"
+                    ? t("detectingArea")
+                    : t("neighborhoodPlaceholder")
                 }
                 disabled={locationStatus === "loading"}
               />
             </Field>
             {locationStatus === "loading" && (
-              <p className="mt-1.5 text-xs text-ink-soft">
-                Using your location to suggest a pickup area…
-              </p>
+              <p className="mt-1.5 text-xs text-ink-soft">{t("usingLocation")}</p>
             )}
             {(locationStatus === "denied" || locationStatus === "error") && (
               <div className="mt-2 space-y-2">
                 <p className="text-xs text-petal">
-                  {locationError ||
-                    "Location is required so buyers can find your bouquet nearby."}
+                  {locationError || t("locationRequired")}
                 </p>
                 <Button
                   type="button"
@@ -641,7 +632,7 @@ export default function SellPage() {
                     void requestLocation();
                   }}
                 >
-                  Allow location
+                  {t("allowLocation")}
                 </Button>
               </div>
             )}
@@ -651,26 +642,22 @@ export default function SellPage() {
                   coordinates={coordinates}
                   onChange={onPickupPinChange}
                 />
-                <p className="mt-1.5 text-xs text-faint">
-                  Drag the pin to your pickup spot. Buyers see your neighborhood,
-                  distance, and an approximate area — never your exact address.
-                </p>
+                <p className="mt-1.5 text-xs text-faint">{t("pinHint")}</p>
               </>
             )}
             {locationStatus === "ready" && !coordinates && (
-              <p className="mt-1.5 text-xs text-faint">
-                Buyers see your neighborhood &amp; distance — never your exact
-                address. You can edit the label above.
-              </p>
+              <p className="mt-1.5 text-xs text-faint">{t("areaHint")}</p>
             )}
           </div>
           <div>
-            <span className="mb-1.5 block text-[13px] font-medium">Pickup</span>
+            <span className="mb-1.5 block text-[13px] font-medium">
+              {t("pickup")}
+            </span>
             <div className="flex flex-wrap gap-2">
               {PICKUP_METHODS.map((method) => (
                 <Chip
                   key={method}
-                  label={PICKUP_LABELS[method]}
+                  label={tPickup(method)}
                   selected={pickup.includes(method)}
                   onClick={() =>
                     setPickup((prev) =>
@@ -685,18 +672,18 @@ export default function SellPage() {
               ))}
             </div>
           </div>
-          <Field label="Your name">
+          <Field label={t("yourName")}>
             <TextInput
               value={sellerName}
               onChange={(e) => setSellerName(e.target.value)}
-              placeholder="Shown to buyers"
+              placeholder={t("namePlaceholder")}
             />
           </Field>
-          <Field label="Contact (phone or @telegram)">
+          <Field label={t("contact")}>
             <TextInput
               value={sellerContact}
               onChange={(e) => setSellerContact(e.target.value)}
-              placeholder="Shared when a buyer taps Contact"
+              placeholder={t("contactPlaceholder")}
             />
           </Field>
           <Button
@@ -705,7 +692,7 @@ export default function SellPage() {
             disabled={!detailsValid}
             onClick={() => setStep("review")}
           >
-            Preview listing
+            {t("previewListing")}
           </Button>
         </section>
       )}
@@ -713,7 +700,7 @@ export default function SellPage() {
       {step === "review" && (
         <section>
           <h1 className="font-display text-[26px] font-medium">
-            Preview &amp; publish
+            {t("reviewTitle")}
           </h1>
 
           <div className="mt-[18px] max-w-[320px] overflow-hidden rounded-[20px] border border-line bg-card">
@@ -739,12 +726,17 @@ export default function SellPage() {
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate font-display text-[19px]">{title}</span>
                 <span className="whitespace-nowrap text-[17px] font-bold">
-                  {formatPrice(Math.round(Number(price) * 100), "EUR")}
+                  {formatPrice(
+                    Math.round(Number(price) * 100),
+                    locale,
+                    APP_CURRENCY,
+                  )}
                 </span>
               </div>
               <div className="mt-1 text-[13px] text-ink-soft">
                 {neighborhood}
-                {ai && ` · lasts ${remainingDaysLabel(ai.freshness)}`}
+                {ai &&
+                  ` · ${t("lasts", { days: remainingDaysLabel(ai.freshness, locale) })}`}
               </div>
             </div>
           </div>
@@ -756,23 +748,20 @@ export default function SellPage() {
               </span>
               <div>
                 <div className="text-sm font-bold text-[#3a4a38]">
-                  Listing quality: {QUALITY_LABELS[ai.analysis.listingQuality]}
+                  {t("listingQuality", {
+                    quality: tQuality(ai.analysis.listingQuality),
+                  })}
                 </div>
-                <div className="text-[12.5px] text-[#5a6a55]">
-                  Buyers see exactly this card in the feed.
-                </div>
+                <div className="text-[12.5px] text-[#5a6a55]">{t("buyersSee")}</div>
               </div>
             </div>
           )}
 
           {config.hasSupabase && !authLoading && !signedIn && (
             <div className="mt-[18px] rounded-2xl border border-line bg-surface-tint p-4 text-left">
-              <p className="text-[14px] text-ink-2">
-                You&apos;ll need to sign in before publishing — photo analysis
-                still works without an account.
-              </p>
+              <p className="text-[14px] text-ink-2">{t("needSignIn")}</p>
               <Link href="/sign-in?next=/sell" className="mt-3 inline-block">
-                <Button variant="secondary">Sign in</Button>
+                <Button variant="secondary">{t("signIn")}</Button>
               </Link>
             </div>
           )}
@@ -784,7 +773,7 @@ export default function SellPage() {
             disabled={!config.hasSupabase || !signedIn}
             onClick={() => void publish()}
           >
-            Publish listing
+            {t("publish")}
           </Button>
         </section>
       )}
@@ -797,21 +786,20 @@ export default function SellPage() {
             </svg>
           </div>
           <h1 className="mt-6 font-display text-[30px] font-medium">
-            You&apos;re live!
+            {t("liveTitle")}
           </h1>
           <p className="mt-2.5 max-w-[340px] text-[15px] leading-relaxed text-ink-soft">
-            Your bouquet is now visible to people nearby. You&apos;ll arrange
-            pickup together when someone reaches out.
+            {t("liveSubtitle")}
           </p>
           <div className="mt-8 flex w-full max-w-[320px] flex-col gap-3">
             <Link href={`/listings/${published.id}`}>
               <Button fullWidth className="!h-14 !rounded-2xl !text-base">
-                View my listing
+                {t("viewListing")}
               </Button>
             </Link>
             <Link href="/">
               <Button fullWidth variant="ghost">
-                Back to browse
+                {t("backToBrowse")}
               </Button>
             </Link>
           </div>

@@ -51,8 +51,21 @@ describe("analyzeBouquet", () => {
           { type: "chrysanthemums", name: "Chrysanthemums" },
         ],
       }),
+      "en",
     );
     expect(analysis.suggestedTitle.toLowerCase()).toContain("mixed");
+  });
+
+  it("localizes suggestions for Georgian", async () => {
+    const { analysis } = await analyzeBouquet(
+      ["img"],
+      providerWith({
+        photo: { sharpness: "blurry", lighting: "dim", framing: "partially cropped" },
+      }),
+      "ka",
+    );
+    expect(analysis.photoQuality).toBe("poor");
+    expect(analysis.suggestions.join(" ")).toMatch(/განათება/);
   });
 
   it("downgrades quality and suggests fixes for bad photos", async () => {
@@ -61,6 +74,7 @@ describe("analyzeBouquet", () => {
       providerWith({
         photo: { sharpness: "blurry", lighting: "dim", framing: "partially cropped" },
       }),
+      "en",
     );
     expect(analysis.photoQuality).toBe("poor");
     expect(analysis.suggestions.join(" ")).toMatch(/lighting/i);

@@ -9,7 +9,7 @@ function listing(overrides: Partial<Listing>): Listing {
     title: "Red roses",
     description: "Lovely",
     priceCents: 500,
-    currency: "EUR",
+    currency: "GEL",
     flowerTypes: ["roses"],
     photos: [],
     freshness: {
