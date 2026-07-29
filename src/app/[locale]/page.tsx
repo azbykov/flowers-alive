@@ -59,6 +59,10 @@ function writeBrowseView(next: BrowseView) {
   viewListeners.forEach((listener) => listener());
 }
 
+function getServerBrowseView(): BrowseView {
+  return "list";
+}
+
 const SORT_KEYS: SortKey[] = ["distance", "freshness", "newest", "price"];
 
 function SortModal({
@@ -167,7 +171,7 @@ export default function BrowsePage() {
   const view = useSyncExternalStore(
     subscribeBrowseView,
     readBrowseView,
-    () => "list",
+    getServerBrowseView,
   );
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
