@@ -28,5 +28,5 @@ jobs:
         run: npm test
 
       - name: Build
-        # Demo mode — no env secrets required.
+        # Compiles without Supabase env — runtime requires configured project.
         run: npm run build

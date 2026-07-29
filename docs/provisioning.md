@@ -95,6 +95,5 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Leave Supabase vars empty to stay in demo mode (CI and default local).
-Demo listings also load into local Supabase via `supabase/seed.sql` on
-`supabase db reset` (same Amsterdam set as the in-memory demo).
+Leave Supabase vars empty only for CI build checks (no runtime DB). For local
+development use `supabase start` and seed listings via `supabase db reset`.

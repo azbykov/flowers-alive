@@ -88,6 +88,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  for (const photo of parsed.data.photos) {
+    if (
+      photo.startsWith("data:") ||
+      photo.startsWith("http://") ||
+      photo.startsWith("https://") ||
+      photo.startsWith("/")
+    ) {
+      return NextResponse.json(
+        {
+          error: "Invalid listing",
+          issues: [{ message: "Photos must be uploaded to storage before publishing." }],
+        },
+        { status: 400 },
+      );
+    }
+    if (!photo.startsWith(`${sellerId}/`)) {
+      return NextResponse.json(
+        {
+          error: "Invalid listing",
+          issues: [{ message: "Photo paths must belong to your account." }],
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   const repo = await getRepo();
   const listing = await repo.create(parsed.data, sellerId);
   return NextResponse.json(

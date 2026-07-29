@@ -30,15 +30,9 @@ export default function ProfilePage() {
   }, [signedIn, profile.id]);
 
   async function markSold(id: string) {
-    const headers: Record<string, string> = {
-      "content-type": "application/json",
-    };
-    if (config.demoMode) {
-      headers["x-seller-id"] = profile.id;
-    }
     const res = await fetch(`/api/listings/${id}`, {
       method: "PATCH",
-      headers,
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ action: "markSold" }),
     });
     if (res.ok) {
@@ -55,7 +49,21 @@ export default function ProfilePage() {
     );
   }
 
-  if (config.hasSupabase && !signedIn) {
+  if (!config.hasSupabase) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 pt-6 lg:max-w-[752px] lg:pt-11">
+        <h1 className="font-display text-2xl font-medium tracking-tight lg:text-[28px]">
+          Profile
+        </h1>
+        <p className="mt-2 text-[15px] text-ink-soft">
+          Configure Supabase in <code className="text-[13px]">.env</code> to use
+          profiles and listings.
+        </p>
+      </main>
+    );
+  }
+
+  if (!signedIn) {
     return (
       <main className="mx-auto max-w-2xl px-4 pt-6 lg:max-w-[752px] lg:pt-11">
         <h1 className="font-display text-2xl font-medium tracking-tight lg:text-[28px]">
@@ -79,12 +87,10 @@ export default function ProfilePage() {
             Profile
           </h1>
           <p className="mt-1 text-[13px] text-ink-soft">
-            {config.hasSupabase
-              ? "Used to prefill your listings. Synced to your account."
-              : "Used to prefill your listings. Stored on this device — sign-in arrives with the hosted version."}
+            Used to prefill your listings. Synced to your account.
           </p>
         </div>
-        {config.hasSupabase && signedIn && (
+        {signedIn && (
           <button
             type="button"
             onClick={() => void signOut()}

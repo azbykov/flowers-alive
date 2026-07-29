@@ -1,18 +1,19 @@
 import { config } from "@/lib/config";
 import type { ListingRepository } from "./repo";
-import { memoryRepo } from "./memoryRepo";
 
 /**
- * Demo mode → in-memory. Production → request-scoped Supabase client so
- * RLS sees the authenticated user from the session cookie.
+ * Request-scoped Supabase repo — RLS sees the authenticated user from the
+ * session cookie. Requires NEXT_PUBLIC_SUPABASE_* to be configured.
  */
 export async function getRepo(): Promise<ListingRepository> {
-  if (config.hasSupabase) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const { createSupabaseRepo } = await import("./supabaseRepo");
-    return createSupabaseRepo(await createClient());
+  if (!config.hasSupabase) {
+    throw new Error(
+      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    );
   }
-  return memoryRepo;
+  const { createClient } = await import("@/lib/supabase/server");
+  const { createSupabaseRepo } = await import("./supabaseRepo");
+  return createSupabaseRepo(await createClient());
 }
 
 export type { ListingRepository };

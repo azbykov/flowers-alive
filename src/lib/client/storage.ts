@@ -28,3 +28,10 @@ export async function uploadListingPhotos(
 
   return paths;
 }
+
+/** Best-effort cleanup when listing creation fails after upload. */
+export async function removeListingPhotos(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const supabase = createClient();
+  await supabase.storage.from(BUCKET).remove(paths);
+}

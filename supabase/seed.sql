@@ -1,5 +1,5 @@
 -- Demo seed for local Supabase (`supabase db reset`).
--- Mirrors src/lib/db/seed.ts — Amsterdam bouquets with procedurally generated
+-- Amsterdam bouquets with procedurally generated placeholder illustrations
 -- placeholder illustrations served by GET /api/placeholder/[flowerType].
 -- Safe to re-run after reset; not applied by `db push` to remote (local only).
 

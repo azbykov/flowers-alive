@@ -1,13 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { config } from "@/lib/config";
 
-/**
- * Identity + editable profile.
- * Demo mode: stable anonymous id in localStorage.
- * Production: Supabase Auth user id + profiles table.
- */
+/** Identity + editable profile from Supabase Auth + profiles table. */
 
 export interface Profile {
   id: string;
@@ -15,57 +11,25 @@ export interface Profile {
   contact: string;
 }
 
-const KEY = "slf.profile";
 const CHANGE_EVENT = "slf:profile-changed";
 const SERVER_SNAPSHOT: Profile = { id: "server", displayName: "", contact: "" };
 
 let cache: Profile | null = null;
 
-function readDemo(): Profile {
-  const raw = window.localStorage.getItem(KEY);
-  if (raw) {
-    try {
-      return JSON.parse(raw) as Profile;
-    } catch {
-      // fall through to re-create
-    }
-  }
-  const fresh: Profile = {
-    id: crypto.randomUUID(),
-    displayName: "",
-    contact: "",
-  };
-  window.localStorage.setItem(KEY, JSON.stringify(fresh));
-  return fresh;
-}
-
 export function getProfile(): Profile {
   if (typeof window === "undefined") return SERVER_SNAPSHOT;
-  if (config.hasSupabase) {
-    // Production callers should prefer useAuthProfile(); this fallback
-    // keeps sell-flow publish working until the auth profile has loaded.
-    return cache ?? SERVER_SNAPSHOT;
-  }
-  cache ??= readDemo();
-  return cache;
+  return cache ?? SERVER_SNAPSHOT;
 }
 
 export function saveProfile(
   update: Pick<Profile, "displayName" | "contact">,
 ): Profile {
-  if (config.hasSupabase) {
-    const current = cache ?? SERVER_SNAPSHOT;
-    const next = { ...current, ...update };
-    cache = next;
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-    void persistProfileToSupabase(next);
-    return next;
-  }
-  const profile = { ...getProfile(), ...update };
-  window.localStorage.setItem(KEY, JSON.stringify(profile));
-  cache = profile;
+  const current = cache ?? SERVER_SNAPSHOT;
+  const next = { ...current, ...update };
+  cache = next;
   window.dispatchEvent(new Event(CHANGE_EVENT));
-  return profile;
+  void persistProfileToSupabase(next);
+  return next;
 }
 
 async function persistProfileToSupabase(profile: Profile) {
@@ -79,23 +43,9 @@ async function persistProfileToSupabase(profile: Profile) {
   });
 }
 
-function subscribe(onChange: () => void): () => void {
-  const handler = () => {
-    if (!config.hasSupabase) cache = null;
-    onChange();
-  };
-  window.addEventListener(CHANGE_EVENT, handler);
-  return () => window.removeEventListener(CHANGE_EVENT, handler);
-}
-
-/** Reactive stored profile — hydration-safe (empty on the server pass). */
-export function useStoredProfile(): Profile {
-  return useSyncExternalStore(subscribe, getProfile, () => SERVER_SNAPSHOT);
-}
-
 /**
- * Production auth profile: loads the Supabase session + profiles row.
- * Demo mode: mirrors useStoredProfile.
+ * Auth profile: loads the Supabase session + profiles row.
+ * Without Supabase config, always unsigned-out.
  */
 export function useAuthProfile(): {
   profile: Profile;
@@ -104,7 +54,6 @@ export function useAuthProfile(): {
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 } {
-  const demo = useStoredProfile();
   const [authState, setAuthState] = useState<{
     profile: Profile;
     loading: boolean;
@@ -112,15 +61,16 @@ export function useAuthProfile(): {
   }>(() =>
     config.hasSupabase
       ? { profile: SERVER_SNAPSHOT, loading: true, signedIn: false }
-      : { profile: demo, loading: false, signedIn: true },
+      : { profile: SERVER_SNAPSHOT, loading: false, signedIn: false },
   );
 
   const refresh = useCallback(async () => {
     if (!config.hasSupabase) {
+      cache = SERVER_SNAPSHOT;
       setAuthState({
-        profile: getProfile(),
+        profile: SERVER_SNAPSHOT,
         loading: false,
-        signedIn: true,
+        signedIn: false,
       });
       return;
     }
@@ -143,8 +93,6 @@ export function useAuthProfile(): {
       .select("display_name, contact")
       .eq("id", user.id)
       .maybeSingle();
-    // First login (e.g. via Google): seed the profile row with the name the
-    // provider already gave us, so there's nothing to type before selling.
     const metadataName =
       (user.user_metadata?.full_name as string | undefined) ??
       (user.user_metadata?.name as string | undefined) ??
@@ -167,7 +115,6 @@ export function useAuthProfile(): {
 
   useEffect(() => {
     if (!config.hasSupabase) return;
-    // Session load is async IO — intentional mount effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
@@ -185,16 +132,6 @@ export function useAuthProfile(): {
     });
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
-
-  if (!config.hasSupabase) {
-    return {
-      profile: demo,
-      loading: false,
-      signedIn: true,
-      signOut,
-      refresh,
-    };
-  }
 
   return {
     profile: authState.profile,

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, Suspense, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +9,7 @@ import { GoogleIcon } from "@/components/ui/GoogleIcon";
 
 /**
  * Sign-in with Google (one tap) or a magic-link email — no passwords.
- * In demo mode (no Supabase) this page just explains that sign-in is skipped.
+ * Requires Supabase to be configured.
  */
 function SignInForm() {
   const searchParams = useSearchParams();
@@ -80,12 +79,11 @@ function SignInForm() {
       <main className="mx-auto max-w-[480px] px-4 pb-16 pt-10">
         <h1 className="font-display text-[28px] font-medium">Sign in</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-          Demo mode has no accounts — your profile lives on this device. Sign-in
-          appears once Supabase is configured.
+          Supabase is not configured. Add{" "}
+          <code className="text-[13px]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+          <code className="text-[13px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
+          <code className="text-[13px]">.env</code> — see docs/provisioning.md.
         </p>
-        <Link href="/profile" className="mt-6 inline-block">
-          <Button>Go to profile</Button>
-        </Link>
       </main>
     );
   }
