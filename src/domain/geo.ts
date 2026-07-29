@@ -39,8 +39,15 @@ export function toApproximateMapPoint(exact: Coordinates): Coordinates {
   };
 }
 
-export function distanceLabel(km: number | null): string {
+const DISTANCE: Record<string, { near: string; km: (n: string) => string }> = {
+  en: { near: "~100 m", km: (n) => `~${n} km` },
+  ka: { near: "~100 მ", km: (n) => `~${n} კმ` },
+  ru: { near: "~100 м", km: (n) => `~${n} км` },
+};
+
+export function distanceLabel(km: number | null, locale: string = "en"): string {
   if (km === null) return "";
-  if (km < 0.1) return "~100 m";
-  return `~${km.toFixed(1)} km`;
+  const msg = DISTANCE[locale] ?? DISTANCE.en;
+  if (km < 0.1) return msg.near;
+  return msg.km(km.toFixed(1));
 }

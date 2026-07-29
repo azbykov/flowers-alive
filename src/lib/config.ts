@@ -48,5 +48,5 @@ export const config = {
   },
 } as const;
 
-/** Browse fallback when geolocation is denied — not used for sell publish. */
-export const DEFAULT_CITY_CENTER = { lat: 52.3702, lng: 4.8952 };
+/** Browse fallback when geolocation is denied — Tbilisi center. */
+export const DEFAULT_CITY_CENTER = { lat: 41.7151, lng: 44.8271 };

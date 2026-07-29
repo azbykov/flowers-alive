@@ -2,6 +2,7 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
@@ -12,6 +13,7 @@ import { GoogleIcon } from "@/components/ui/GoogleIcon";
  * Requires Supabase to be configured.
  */
 function SignInForm() {
+  const t = useTranslations("SignIn");
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
   const [email, setEmail] = useState("");
@@ -19,7 +21,7 @@ function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(() =>
-    searchParams.get("error") ? "That sign-in link expired or was already used — try again." : "",
+    searchParams.get("error") ? t("expired") : "",
   );
 
   function callbackUrl() {
@@ -44,7 +46,7 @@ function SignInForm() {
       }
       // On success the browser navigates to Google — no need to reset loading.
     } catch {
-      setError("Could not start Google sign-in — try again in a moment.");
+      setError(t("googleError"));
       setGoogleLoading(false);
     }
   }
@@ -68,7 +70,7 @@ function SignInForm() {
         setSent(true);
       }
     } catch {
-      setError("Could not send the link — try again in a moment.");
+      setError(t("sendError"));
     } finally {
       setLoading(false);
     }
@@ -77,12 +79,9 @@ function SignInForm() {
   if (!config.hasSupabase) {
     return (
       <main className="mx-auto max-w-[480px] px-4 pb-16 pt-10">
-        <h1 className="font-display text-[28px] font-medium">Sign in</h1>
+        <h1 className="font-display text-[28px] font-medium">{t("title")}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-          Supabase is not configured. Add{" "}
-          <code className="text-[13px]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-          <code className="text-[13px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
-          <code className="text-[13px]">.env</code> — see docs/provisioning.md.
+          {t("noSupabase")}
         </p>
       </main>
     );
@@ -90,10 +89,9 @@ function SignInForm() {
 
   return (
     <main className="mx-auto max-w-[480px] px-4 pb-16 pt-10">
-      <h1 className="font-display text-[28px] font-medium">Sign in</h1>
+      <h1 className="font-display text-[28px] font-medium">{t("title")}</h1>
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-        Continue with Google, or we&apos;ll email you a magic link — no
-        password to remember.
+        {t("subtitle")}
       </p>
 
       {!sent && error && (
@@ -105,11 +103,10 @@ function SignInForm() {
       {sent ? (
         <div className="mt-8 rounded-2xl border border-[#dbead9] bg-[#f2f7ef] p-5">
           <div className="text-[15px] font-semibold text-[#3a4a38]">
-            Check your email
+            {t("checkEmail")}
           </div>
           <p className="mt-1.5 text-[14px] leading-relaxed text-[#5a6a55]">
-            We sent a sign-in link to <strong>{email}</strong>. Open it on this
-            device to continue.
+            {t("sentTo", { email })}
           </p>
         </div>
       ) : (
@@ -123,26 +120,26 @@ function SignInForm() {
             className="mt-6 !h-14 !rounded-2xl !text-base"
           >
             <GoogleIcon />
-            Continue with Google
+            {t("continueGoogle")}
           </Button>
 
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-line" />
             <span className="text-[12px] font-medium uppercase tracking-wide text-ink-soft">
-              or with email
+              {t("orEmail")}
             </span>
             <div className="h-px flex-1 bg-line" />
           </div>
 
           <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
-            <Field label="Email">
+            <Field label={t("email")}>
               <TextInput
                 type="email"
                 autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
               />
             </Field>
             <Button
@@ -151,7 +148,7 @@ function SignInForm() {
               loading={loading}
               className="!h-14 !rounded-2xl !text-base"
             >
-              Email me a link
+              {t("emailLink")}
             </Button>
           </form>
         </>
@@ -164,12 +161,19 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto max-w-[480px] px-4 pb-16 pt-10">
-          <p className="text-sm text-ink-soft">Loading…</p>
-        </main>
+        <SignInFallback />
       }
     >
       <SignInForm />
     </Suspense>
+  );
+}
+
+function SignInFallback() {
+  const t = useTranslations("SignIn");
+  return (
+    <main className="mx-auto max-w-[480px] px-4 pb-16 pt-10">
+      <p className="text-sm text-ink-soft">{t("loading")}</p>
+    </main>
   );
 }

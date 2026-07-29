@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, context: Context) {
 
   let sellerId: string;
   try {
-    sellerId = await getSessionSellerId(request);
+    sellerId = await getSessionSellerId();
   } catch (err) {
     if (err instanceof AuthError) {
       return NextResponse.json({ error: err.message }, { status: 401 });

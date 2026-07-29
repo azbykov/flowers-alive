@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { config } from "@/lib/config";
+import { languageInstruction } from "./localeCopy";
 import type { AiVisionProvider, ImageObservation } from "./types";
 
 /** Models often return a single phrase instead of a string[]; normalize both. */
@@ -68,6 +69,13 @@ Look at the photos and report JSON matching the schema:
 - freshness: score 0-100 for current freshness, remainingDaysMin/Max estimate of days the bouquet will still look good in a vase, and confidence 0-100. Be conservative; never overstate certainty.
 
 Never mention, estimate, or imply any price or monetary value.`;
+
+function systemPromptFor(locale?: string): string {
+  const lang = locale
+    ? `\n\n${languageInstruction(locale)}`
+    : "";
+  return SYSTEM_PROMPT + lang;
+}
 
 /** JSON Schema for Gateway + OpenAI structured outputs (json_object is rejected by Gateway). */
 const OBSERVATION_JSON_SCHEMA = {
@@ -137,7 +145,7 @@ export const openaiVisionProvider: AiVisionProvider = {
   get name() {
     return config.vision.providerName;
   },
-  async observe(imagesBase64: string[]): Promise<ImageObservation> {
+  async observe(imagesBase64: string[], locale?: string): Promise<ImageObservation> {
     const { apiKey, baseURL, model } = config.vision;
     const client = new OpenAI({ apiKey, baseURL });
     const response = await client.chat.completions.create({
@@ -152,7 +160,7 @@ export const openaiVisionProvider: AiVisionProvider = {
       },
       max_tokens: 700,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPromptFor(locale) },
         {
           role: "user",
           content: imagesBase64.map((url) => ({

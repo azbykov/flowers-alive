@@ -30,7 +30,7 @@ create table public.listings (
   title        text not null check (char_length(title) between 3 and 80),
   description  text not null default '' check (char_length(description) <= 600),
   price_cents  integer not null check (price_cents >= 0),   -- seller-chosen, never AI
-  currency     char(3) not null default 'EUR',
+  currency     char(3) not null default 'GEL',
   pickup_methods public.pickup_method[] not null default '{meet}',
   status       public.listing_status not null default 'active',
   created_at   timestamptz not null default now(),

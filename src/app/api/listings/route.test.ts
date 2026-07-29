@@ -10,7 +10,7 @@ const seedListing: Listing = {
   title: "Bright yellow tulips",
   description: "From the market",
   priceCents: 500,
-  currency: "EUR",
+  currency: "GEL",
   flowerTypes: ["tulips"],
   photos: [{ id: "p1", src: "/api/placeholder/tulips?seed=x", position: 0 }],
   freshness: {
@@ -46,7 +46,7 @@ const validListing = {
   title: "Fresh tulips",
   description: "From the market",
   priceCents: 500,
-  currency: "EUR",
+  currency: "GEL",
   flowerTypes: ["tulips"],
   photos: ["tester/photo-1.jpg"],
   neighborhood: "De Pijp",

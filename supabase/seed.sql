@@ -1,5 +1,5 @@
 -- Demo seed for local Supabase (`supabase db reset`).
--- Amsterdam bouquets; photo rows point at Storage paths under listing-photos/seed/.
+-- Tbilisi bouquets in GEL; photo rows point at Storage paths under listing-photos/seed/.
 -- After reset, upload JPEG bytes:  npm run seed:storage
 -- (files live in supabase/seed-photos/; regenerate via scripts/download-seed-photos.py).
 -- Safe to re-run after reset; not applied by `db push` to remote (local only).
@@ -16,34 +16,34 @@ insert into auth.users (
   confirmation_token, recovery_token, email_change_token_new, email_change
 ) values
   ('00000000-0000-0000-0000-000000000000', 'a1111111-1111-1111-1111-111111111111',
-   'authenticated', 'authenticated', 'mila@seed.local',
+   'authenticated', 'authenticated', 'nino@seed.local',
    crypt('seed-password', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Mila"}',
+   '{"provider":"email","providers":["email"]}', '{"display_name":"ნინო"}',
    now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'a2222222-2222-2222-2222-222222222222',
-   'authenticated', 'authenticated', 'jesse@seed.local',
+   'authenticated', 'authenticated', 'giorgi@seed.local',
    crypt('seed-password', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Jesse"}',
+   '{"provider":"email","providers":["email"]}', '{"display_name":"გიორგი"}',
    now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'a3333333-3333-3333-3333-333333333333',
-   'authenticated', 'authenticated', 'sanne@seed.local',
+   'authenticated', 'authenticated', 'mariam@seed.local',
    crypt('seed-password', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Sanne"}',
+   '{"provider":"email","providers":["email"]}', '{"display_name":"მარიამი"}',
    now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'a4444444-4444-4444-4444-444444444444',
-   'authenticated', 'authenticated', 'tom@seed.local',
+   'authenticated', 'authenticated', 'luka@seed.local',
    crypt('seed-password', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Tom"}',
+   '{"provider":"email","providers":["email"]}', '{"display_name":"ლუკა"}',
    now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'a5555555-5555-5555-5555-555555555555',
-   'authenticated', 'authenticated', 'femke@seed.local',
+   'authenticated', 'authenticated', 'ana@seed.local',
    crypt('seed-password', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Femke"}',
+   '{"provider":"email","providers":["email"]}', '{"display_name":"ანა"}',
    now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'a6666666-6666-6666-6666-666666666666',
-   'authenticated', 'authenticated', 'daan@seed.local',
+   'authenticated', 'authenticated', 'dato@seed.local',
    crypt('seed-password', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Daan"}',
+   '{"provider":"email","providers":["email"]}', '{"display_name":"დათო"}',
    now(), now(), '', '', '', '')
 on conflict (id) do nothing;
 
@@ -59,27 +59,27 @@ where u.email like '%@seed.local'
 on conflict do nothing;
 
 insert into public.profiles (id, display_name, contact) values
-  ('a1111111-1111-1111-1111-111111111111', 'Mila',  '@mila_ams'),
-  ('a2222222-2222-2222-2222-222222222222', 'Jesse', '+31 6 1234 5678'),
-  ('a3333333-3333-3333-3333-333333333333', 'Sanne', '@sanne_flwr'),
-  ('a4444444-4444-4444-4444-444444444444', 'Tom',   '+31 6 8765 4321'),
-  ('a5555555-5555-5555-5555-555555555555', 'Femke', '@femke_oost'),
-  ('a6666666-6666-6666-6666-666666666666', 'Daan',  '+31 6 2468 1357')
+  ('a1111111-1111-1111-1111-111111111111', 'ნინო',  '@nino_tbs'),
+  ('a2222222-2222-2222-2222-222222222222', 'გიორგი', '+995 555 12 34 56'),
+  ('a3333333-3333-3333-3333-333333333333', 'მარიამი', '@mariam_flwr'),
+  ('a4444444-4444-4444-4444-444444444444', 'ლუკა',   '+995 555 98 76 54'),
+  ('a5555555-5555-5555-5555-555555555555', 'ანა', '@ana_vake'),
+  ('a6666666-6666-6666-6666-666666666666', 'დათო',  '+995 555 24 68 13')
 on conflict (id) do update
   set display_name = excluded.display_name, contact = excluded.contact;
 
--- ── Locations ──────────────────────────────────────────────────────────────
+-- ── Locations (Tbilisi neighborhoods) ──────────────────────────────────────
 
 insert into public.locations (id, neighborhood, lat, lng, created_by) values
-  ('b1111111-1111-1111-1111-111111111111', 'Jordaan',   52.3739, 4.8809, 'a1111111-1111-1111-1111-111111111111'),
-  ('b2222222-2222-2222-2222-222222222222', 'De Pijp',   52.3547, 4.8921, 'a2222222-2222-2222-2222-222222222222'),
-  ('b3333333-3333-3333-3333-333333333333', 'Oud-West',  52.3676, 4.8672, 'a3333333-3333-3333-3333-333333333333'),
-  ('b4444444-4444-4444-4444-444444444444', 'Centrum',   52.3728, 4.8936, 'a4444444-4444-4444-4444-444444444444'),
-  ('b5555555-5555-5555-5555-555555555555', 'Oost',      52.3625, 4.9296, 'a5555555-5555-5555-5555-555555555555'),
-  ('b6666666-6666-6666-6666-666666666666', 'Noord',     52.3907, 4.9163, 'a6666666-6666-6666-6666-666666666666')
+  ('b1111111-1111-1111-1111-111111111111', 'ვაკე',       41.7090, 44.7550, 'a1111111-1111-1111-1111-111111111111'),
+  ('b2222222-2222-2222-2222-222222222222', 'საბურთალო',  41.7230, 44.7480, 'a2222222-2222-2222-2222-222222222222'),
+  ('b3333333-3333-3333-3333-333333333333', 'ვერა',       41.7065, 44.7855, 'a3333333-3333-3333-3333-333333333333'),
+  ('b4444444-4444-4444-4444-444444444444', 'სოლოლაკი',   41.6895, 44.7995, 'a4444444-4444-4444-4444-444444444444'),
+  ('b5555555-5555-5555-5555-555555555555', 'ისანი',      41.6850, 44.8520, 'a5555555-5555-5555-5555-555555555555'),
+  ('b6666666-6666-6666-6666-666666666666', 'დიღომი',     41.7700, 44.7750, 'a6666666-6666-6666-6666-666666666666')
 on conflict (id) do nothing;
 
--- ── Listings ───────────────────────────────────────────────────────────────
+-- ── Listings (prices in tetri; currency GEL) ────────────────────────────────
 
 insert into public.listings (
   id, seller_id, location_id, title, description, price_cents, currency,
@@ -89,54 +89,54 @@ insert into public.listings (
     'c1111111-1111-1111-1111-111111111111',
     'a1111111-1111-1111-1111-111111111111',
     'b1111111-1111-1111-1111-111111111111',
-    'Blush pink roses, barely a day old',
-    'Got these gorgeous roses yesterday but I fly out tonight. 11 stems, opened beautifully. Come grab them before the airport does.',
-    800, 'EUR', '{meet,doorstep}', 'active',
+    'ვარდისფერი ვარდები — თითქმის ახალი',
+    'გუშინ მივიღე, მაგრამ დღეს მივდივარ. 11 ღერო, ლამაზად გაიხსნა. მოდით აიღეთ, სანამ აეროპორტში წავალ.',
+    2500, 'GEL', '{meet,doorstep}', 'active',
     now() - interval '3 hours', null
   ),
   (
     'c2222222-2222-2222-2222-222222222222',
     'a2222222-2222-2222-2222-222222222222',
     'b2222222-2222-2222-2222-222222222222',
-    'Bright yellow tulips from the market',
-    'Bought too many at Albert Cuyp this morning. 15 stems, still tight buds — they''ll open over the week.',
-    500, 'EUR', '{meet}', 'active',
+    'ყვითელი ტიტები ბაზრიდან',
+    'დილით ბაზარზე ზედმეტი ვიყიდე. 15 ღერო, კვირტები ჯერ დახურულია — კვირის განმავლობაში გაიხსნება.',
+    1500, 'GEL', '{meet}', 'active',
     now() - interval '6 hours', null
   ),
   (
     'c3333333-3333-3333-3333-333333333333',
     'a3333333-3333-3333-3333-333333333333',
     'b3333333-3333-3333-3333-333333333333',
-    'Peonies in full bloom — enjoy this weekend',
-    'Anniversary peonies, fully open and spectacular right now. Best enjoyed in the next few days. We''re off to Portugal.',
-    600, 'EUR', '{doorstep}', 'active',
+    'პიონები სრულ ყვავილობაში',
+    'საიუბილეო პიონები, სრულად გახსნილი. საუკეთესოა მომდევნო რამდენიმე დღეში. ჩვენ ვმოგზაურობთ.',
+    2000, 'GEL', '{doorstep}', 'active',
     now() - interval '26 hours', null
   ),
   (
     'c4444444-4444-4444-4444-444444444444',
     'a4444444-4444-4444-4444-444444444444',
     'b4444444-4444-4444-4444-444444444444',
-    'Big mixed bouquet from a company event',
-    'Centerpiece from yesterday''s office party. Roses, lilies and chrysanthemums. Huge — bring two hands.',
-    1000, 'EUR', '{meet,pickup_point}', 'active',
+    'დიდი შერეული თაიგული ღონისძიებიდან',
+    'ოფისის წვეულების ცენტრალური კომპოზიცია. ვარდები, შროშანები და ქრიზანთემები. დიდია — ორი ხელით წაიღეთ.',
+    3500, 'GEL', '{meet,pickup_point}', 'active',
     now() - interval '20 hours', null
   ),
   (
     'c5555555-5555-5555-5555-555555555555',
     'a5555555-5555-5555-5555-555555555555',
     'b5555555-5555-5555-5555-555555555555',
-    'Blue hydrangeas, need water soon',
-    'Three big hydrangea heads. Moving apartments Saturday and can''t take them. Free vase included if you want it.',
-    300, 'EUR', '{doorstep}', 'active',
+    'ლურჯი ჰორტენზიები — მალე სჭირდებათ წყალი',
+    'სამი დიდი ჰორტენზია. შაბათს გადავდივარ და ვერ ვიღებ. ვაზაც შეგიძლიათ წაიღოთ.',
+    1200, 'GEL', '{doorstep}', 'active',
     now() - interval '44 hours', null
   ),
   (
     'c6666666-6666-6666-6666-666666666666',
     'a6666666-6666-6666-6666-666666666666',
     'b6666666-6666-6666-6666-666666666666',
-    'Sunflowers — sold, enjoy them Lisa!',
-    'Nine tall sunflowers from the ferry market.',
-    450, 'EUR', '{meet}', 'sold',
+    'მზესუმზირები — გაყიდულია!',
+    'ცხრა მაღალი მზესუმზირა ბაზრიდან.',
+    1800, 'GEL', '{meet}', 'sold',
     now() - interval '50 hours', now() - interval '8 hours'
   )
 on conflict (id) do nothing;
@@ -144,16 +144,15 @@ on conflict (id) do nothing;
 -- ── Bouquets ───────────────────────────────────────────────────────────────
 
 insert into public.bouquets (id, listing_id, flower_types, color_palette) values
-  ('d1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '{roses}', '{blush pink,cream}'),
-  ('d2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222', '{tulips}', '{yellow}'),
-  ('d3333333-3333-3333-3333-333333333333', 'c3333333-3333-3333-3333-333333333333', '{peonies}', '{pink,white}'),
-  ('d4444444-4444-4444-4444-444444444444', 'c4444444-4444-4444-4444-444444444444', '{mixed,roses,lilies,chrysanthemums}', '{white,red,green}'),
-  ('d5555555-5555-5555-5555-555555555555', 'c5555555-5555-5555-5555-555555555555', '{hydrangeas}', '{blue,lavender}'),
-  ('d6666666-6666-6666-6666-666666666666', 'c6666666-6666-6666-6666-666666666666', '{sunflowers}', '{yellow}')
+  ('d1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '{roses}', '{ვარდისფერი,კრემისფერი}'),
+  ('d2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222', '{tulips}', '{ყვითელი}'),
+  ('d3333333-3333-3333-3333-333333333333', 'c3333333-3333-3333-3333-333333333333', '{peonies}', '{ვარდისფერი,თეთრი}'),
+  ('d4444444-4444-4444-4444-444444444444', 'c4444444-4444-4444-4444-444444444444', '{mixed,roses,lilies,chrysanthemums}', '{თეთრი,წითელი,მწვანე}'),
+  ('d5555555-5555-5555-5555-555555555555', 'c5555555-5555-5555-5555-555555555555', '{hydrangeas}', '{ლურჯი,იასამნისფერი}'),
+  ('d6666666-6666-6666-6666-666666666666', 'c6666666-6666-6666-6666-666666666666', '{sunflowers}', '{ყვითელი}')
 on conflict (id) do nothing;
 
 -- ── Photos (Supabase Storage paths — upload via npm run seed:storage) ──────
--- Idempotent: replace any previous seed photo rows (old /seed-photos or placeholder paths).
 
 delete from public.photos
 where listing_id in (
@@ -179,17 +178,17 @@ insert into public.freshness_reports (
   bouquet_id, score, remaining_days_min, remaining_days_max, confidence, signals
 ) values
   ('d1111111-1111-1111-1111-111111111111', 94, 5, 6, 83,
-   '{healthy petals,green leaves,no browning,stems appear fresh}'),
+   '{ჯანსაღი ფურცლები,მწვანე ფოთლები,გაშავება არ ჩანს,ღეროები ახალია}'),
   ('d2222222-2222-2222-2222-222222222222', 97, 6, 8, 88,
-   '{tight fresh buds,crisp green stems,no wilting}'),
+   '{ახალი კვირტები,მწვანე ღეროები,გამოშრობა არ ჩანს}'),
   ('d3333333-3333-3333-3333-333333333333', 68, 2, 3, 79,
-   '{fully open blooms,slight softening on outer petals,leaves still green}'),
+   '{სრულად გახსნილი ყვავილები,გარე ფურცლები ოდნავ რბილია,ფოთლები მწვანეა}'),
   ('d4444444-4444-4444-4444-444444444444', 82, 4, 5, 75,
-   '{most blooms firm,lilies just opening,minor edge browning on roses}'),
+   '{უმეტესობა მტკიცეა,შროშანები იხსნება,ვარდებზე მცირე გაშავება}'),
   ('d5555555-5555-5555-5555-555555555555', 55, 1, 2, 72,
-   '{some petals papery at edges,heads slightly drooping,stems need a fresh cut}'),
+   '{ზოგი ფურცელი კიდეებზე მშრალია,თავები ოდნავ ჩამოშვებულია,ღეროებს სჭირდება განახლება}'),
   ('d6666666-6666-6666-6666-666666666666', 90, 5, 7, 85,
-   '{firm petals,strong stems,vivid color}')
+   '{მტკიცე ფურცლები,ძლიერი ღეროები,ნათელი ფერი}')
 on conflict (bouquet_id) do update set
   score = excluded.score,
   remaining_days_min = excluded.remaining_days_min,
@@ -202,30 +201,30 @@ insert into public.bouquet_analyses (
 ) values
   (
     'd1111111-1111-1111-1111-111111111111', 'seed',
-    '[{"type":"roses","name":"Roses","count":11}]',
+    '[{"type":"roses","name":"ვარდები","count":11}]',
     '{}', 'excellent', 'excellent', '{}'
   ),
   (
     'd2222222-2222-2222-2222-222222222222', 'seed',
-    '[{"type":"tulips","name":"Tulips","count":15}]',
+    '[{"type":"tulips","name":"ტიტები","count":15}]',
     '{}', 'good', 'excellent', '{}'
   ),
   (
     'd3333333-3333-3333-3333-333333333333', 'seed',
-    '[{"type":"peonies","name":"Peonies","count":7}]',
+    '[{"type":"peonies","name":"პიონები","count":7}]',
     '{}', 'good', 'good', '{}'
   ),
   (
     'd4444444-4444-4444-4444-444444444444', 'seed',
-    '[{"type":"roses","name":"Roses","count":6},{"type":"lilies","name":"Lilies","count":4},{"type":"chrysanthemums","name":"Chrysanthemums","count":5}]',
-    '{minor edge browning on two roses}', 'average', 'good',
-    '{Improve lighting — daylight near a window works best.}'
+    '[{"type":"roses","name":"ვარდები","count":6},{"type":"lilies","name":"შროშანები","count":4},{"type":"chrysanthemums","name":"ქრიზანთემები","count":5}]',
+    '{ორ ვარდზე კიდეების გაშავება}', 'average', 'good',
+    '{გააუმჯობესეთ განათება — ფანჯართან დღის შუქი საუკეთესოა.}'
   ),
   (
     'd5555555-5555-5555-5555-555555555555', 'seed',
-    '[{"type":"hydrangeas","name":"Hydrangeas","count":3}]',
-    '{drooping on one head}', 'good', 'average',
-    '{Flowers appear partially wilted — a fresh stem cut may help before handover.}'
+    '[{"type":"hydrangeas","name":"ჰორტენზიები","count":3}]',
+    '{ერთი თავი ჩამოშვებულია}', 'good', 'average',
+    '{ყვავილები ნაწილობრივ გახმარია — გადაცემამდე ღეროების განახლება დაგეხმარებათ.}'
   )
 on conflict (bouquet_id) do update set
   model = excluded.model,

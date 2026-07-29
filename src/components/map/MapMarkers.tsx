@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import type { PublicListing } from "@/domain/types";
 import { formatPrice } from "@/domain/format";
 import { freshColorHex } from "@/components/listing/freshness";
@@ -12,6 +13,7 @@ export function PriceBadge({
   listing: PublicListing;
   active?: boolean;
 }) {
+  const locale = useLocale();
   const score = listing.freshness?.score;
   const dot = score != null ? freshColorHex(score) : "#8b8177";
 
@@ -32,7 +34,7 @@ export function PriceBadge({
           aria-hidden
         />
         <span className="text-[13px] font-bold leading-none text-ink">
-          {formatPrice(listing.priceCents, listing.currency)}
+          {formatPrice(listing.priceCents, locale, listing.currency)}
         </span>
       </div>
       <div
@@ -74,6 +76,7 @@ export function FlowerClusterBadge({ count }: { count: number }) {
 
 /** Expanded listing preview on the map (photo + title + price). */
 export function ListingMapCard({ listing }: { listing: PublicListing }) {
+  const locale = useLocale();
   const cover = listing.photos[0]?.src;
   const score = listing.freshness?.score;
   const dot = score != null ? freshColorHex(score) : null;
@@ -107,7 +110,7 @@ export function ListingMapCard({ listing }: { listing: PublicListing }) {
             {listing.title}
           </span>
           <span className="shrink-0 text-[13px] font-bold text-ink">
-            {formatPrice(listing.priceCents, listing.currency)}
+            {formatPrice(listing.priceCents, locale, listing.currency)}
           </span>
         </div>
       </div>

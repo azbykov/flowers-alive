@@ -27,7 +27,7 @@ export interface ImageObservation {
 
 export interface AiVisionProvider {
   readonly name: string;
-  observe(imagesBase64: string[]): Promise<ImageObservation>;
+  observe(imagesBase64: string[], locale?: string): Promise<ImageObservation>;
 }
 
 export interface AnalyzeResult {

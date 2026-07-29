@@ -11,7 +11,7 @@ function Recenter({ position }: { position: Coordinates }) {
   useEffect(() => {
     if (!map) return;
     map.panTo(position);
-  }, [map, position.lat, position.lng]);
+  }, [map, position]);
   return null;
 }
 

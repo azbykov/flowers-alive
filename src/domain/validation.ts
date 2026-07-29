@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { APP_CURRENCY } from "./currency";
 import { FLOWER_TYPES, PICKUP_METHODS } from "./types";
 
 export const createListingSchema = z.object({
@@ -9,7 +10,7 @@ export const createListingSchema = z.object({
     .int()
     .min(1, "Price must be greater than zero")
     .max(100_000_00, "Price is unrealistically high"),
-  currency: z.string().length(3).default("EUR"),
+  currency: z.literal(APP_CURRENCY).default(APP_CURRENCY),
   flowerTypes: z.array(z.enum(FLOWER_TYPES)).min(1).max(5),
   photos: z
     .array(z.string().min(1))
@@ -59,6 +60,7 @@ export type CreateListingInput = z.infer<typeof createListingSchema>;
 export const analyzeRequestSchema = z.object({
   // Data URLs; size is enforced separately before parsing.
   images: z.array(z.string().startsWith("data:image/")).min(1).max(4),
+  locale: z.enum(["ka", "en", "ru"]).default("ka"),
 });
 
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;

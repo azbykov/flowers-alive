@@ -1,5 +1,3 @@
-import { NextRequest } from "next/server";
-
 export class AuthError extends Error {
   status = 401 as const;
   constructor(message = "Not authorized") {
@@ -9,7 +7,7 @@ export class AuthError extends Error {
 }
 
 /** Resolve the seller id for a mutating request from the Supabase session cookie. */
-export async function getSessionSellerId(_request?: NextRequest): Promise<string> {
+export async function getSessionSellerId(): Promise<string> {
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
   const {

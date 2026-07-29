@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { toggleFavorite, useFavorite } from "@/lib/client/favorites";
 
 export function FavoriteButton({
@@ -9,13 +10,14 @@ export function FavoriteButton({
   listingId: string;
   size?: "md" | "lg";
 }) {
+  const t = useTranslations("Card");
   const saved = useFavorite(listingId);
 
   const dim = size === "lg" ? "h-12 w-12 text-2xl" : "h-9 w-9 text-lg";
   return (
     <button
       type="button"
-      aria-label={saved ? "Remove from favorites" : "Save to favorites"}
+      aria-label={saved ? t("removeFavorite") : t("saveFavorite")}
       aria-pressed={saved}
       onClick={(e) => {
         e.preventDefault();

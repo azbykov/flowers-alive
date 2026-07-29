@@ -10,9 +10,41 @@ export function freshnessTier(score: number): FreshnessTier {
   return "wilting";
 }
 
-export function remainingDaysLabel(report: FreshnessReport): string {
+type RemainingDaysMessages = {
+  enjoyToday: string;
+  oneDay: string;
+  nDays: (n: number) => string;
+  range: (min: number, max: number) => string;
+};
+
+const REMAINING: Record<string, RemainingDaysMessages> = {
+  en: {
+    enjoyToday: "Enjoy today",
+    oneDay: "~1 day",
+    nDays: (n) => `~${n} days`,
+    range: (min, max) => `${min}–${max} days`,
+  },
+  ka: {
+    enjoyToday: "დღეს დატკბით",
+    oneDay: "~1 დღე",
+    nDays: (n) => `~${n} დღე`,
+    range: (min, max) => `${min}–${max} დღე`,
+  },
+  ru: {
+    enjoyToday: "Наслаждайтесь сегодня",
+    oneDay: "~1 день",
+    nDays: (n) => `~${n} дн.`,
+    range: (min, max) => `${min}–${max} дн.`,
+  },
+};
+
+export function remainingDaysLabel(
+  report: FreshnessReport,
+  locale: string = "en",
+): string {
+  const msg = REMAINING[locale] ?? REMAINING.en;
   const { remainingDaysMin: min, remainingDaysMax: max } = report;
-  if (max <= 0) return "Enjoy today";
-  if (min === max) return `~${max} day${max === 1 ? "" : "s"}`;
-  return `${min}–${max} days`;
+  if (max <= 0) return msg.enjoyToday;
+  if (min === max) return max === 1 ? msg.oneDay : msg.nDays(max);
+  return msg.range(min, max);
 }

@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await analyzeBouquetPhotos(parsed.data.images);
+    const result = await analyzeBouquetPhotos(
+      parsed.data.images,
+      parsed.data.locale,
+    );
     return NextResponse.json(result);
   } catch (err) {
     console.error("AI analysis failed", err);
