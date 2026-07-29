@@ -30,8 +30,13 @@ const LISTING_SELECT = `
 `;
 
 function publicPhotoUrl(storagePath: string): string {
-  // Already a full URL (legacy / demo-style) — pass through.
-  if (storagePath.startsWith("http://") || storagePath.startsWith("https://") || storagePath.startsWith("data:")) {
+  // Already a full URL, data URL, or app-public path (seed SVGs) — pass through.
+  if (
+    storagePath.startsWith("http://") ||
+    storagePath.startsWith("https://") ||
+    storagePath.startsWith("data:") ||
+    storagePath.startsWith("/")
+  ) {
     return storagePath;
   }
   return `${config.supabaseUrl}/storage/v1/object/public/listing-photos/${storagePath}`;
