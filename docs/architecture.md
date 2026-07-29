@@ -23,6 +23,7 @@ src/
   components/
     ui/          Design-system primitives (Button, Chip, Field, EmptyState, …).
     listing/     Product components (BouquetCard, FreshnessCard, PhotoUpload, …).
+    map/         Google Maps (BrowseMap, ApproximateMap, PickupMapPicker).
     TopNav/BottomNav  Responsive shell (see UI shell below).
 ```
 
@@ -52,8 +53,10 @@ visual output, don't copy their internals. `design/design-system.md` and
 ## Modes
 
 The app requires Supabase for data, auth, and storage (`NEXT_PUBLIC_SUPABASE_*`).
-Local development: `supabase start` + `supabase db reset` loads seed listings
-from `supabase/seed.sql`. CI builds compile without Supabase env (no runtime DB).
+Local development: `supabase start` + `npm run db:reset` loads seed listings
+from `supabase/seed.sql` and uploads JPEGs from `supabase/seed-photos/` into
+Storage (`listing-photos/seed/*`). CI builds compile without Supabase env (no
+runtime DB).
 
 Vision AI: `AI_GATEWAY_API_KEY` (preferred) or `OPENAI_API_KEY` → real analysis;
 without keys → deterministic mock provider (same UI, not listing seed).
@@ -108,26 +111,40 @@ Every AI output ships with a confidence value and an explanation
   `listing-photos` bucket under `{userId}/{uuid}.jpg`, then
   `POST /api/listings` receives **storage paths** only.
 - `supabaseRepo` resolves paths to public URLs in `rowToListing`.
-- Demo mode still stores data URLs in memory.
+- Local seed: SQL inserts `seed/*.jpg` paths; `npm run seed:storage` uploads
+  the JPEGs from `supabase/seed-photos/` with the service role (same bucket).
 
 ## Location privacy
 
 Precise coordinates are stored internally (`locations.lat/lng`) and used only
-server-side for distance ranking. API responses expose neighborhood + distance
-rounded to 0.1 km (`toPublicListing` strips coordinates). Exact addresses are
-never collected.
+server-side for distance ranking and the seller's pin picker. API responses
+expose neighborhood + distance rounded to 0.1 km, plus `mapPoint` — a ~100 m
+grid snap for browse/detail maps (`toPublicListing` strips exact coordinates).
+Listing detail shows an approximate-area circle, never a precise public pin.
+Exact addresses are never collected.
 
 RLS on `locations` blocks direct anon reads of the table; coordinates are
 only reachable via a join from a listing the requester is allowed to see
 (active, or owned). See migration `0002_rls_hardening.sql`.
 
+## Maps
+
+Client-only Google Maps JS via `@vis.gl/react-google-maps`
+(`src/components/map/`, loaded with `dynamic(..., { ssr: false })`).
+Requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (Maps JavaScript API enabled).
+
+- **Browse** — `List | Map` toggle; Map markers use public `mapPoint`.
+- **Listing detail** — approximate-area circle around `mapPoint`.
+- **Sell** — draggable pickup pin (exact coords) + Nominatim reverse-geocode.
+
 ## Data flow
 
 - **Browse**: client gets geolocation (fallback: demo city center) →
   `GET /api/listings?sort&filters&lat&lng` → server filters/sorts in domain
-  code → cards.
-- **Sell**: photos downscaled → analysis on change → confirm AI → details →
-  preview → (Storage upload if production) → `POST /api/listings`.
+  code → cards or Map view (same listings, markers on `mapPoint`).
+- **Sell**: photos downscaled → analysis on change → confirm AI → details
+  (GPS + optional pin drag + reverse-geocode) → preview → (Storage upload if
+  production) → `POST /api/listings`.
   Steps: photos → analyzing → ai → details → review → success.
 - **Favorites**: localStorage ids (still device-local in v1) +
   `GET /api/listings?ids=`.
@@ -152,7 +169,7 @@ though the UI feature is not built yet.
 - **GitHub Actions** (`.github/workflows/ci.yml`): on push/PR to `main` runs
   `lint` → `test` → `build` in demo mode (no secrets).
 - **Vercel**: native GitHub integration deploys `main` (production) and PR
-  previews. Env: Supabase URL/anon key + `AI_GATEWAY_API_KEY`.
+  previews. Env: Supabase URL/anon key + Google Maps key + `AI_GATEWAY_API_KEY`.
 - Provisioning steps: [docs/provisioning.md](./provisioning.md).
 
 ## Testing

@@ -12,11 +12,16 @@ import type {
 import { FLOWER_LABELS, FLOWER_TYPES, PICKUP_LABELS, PICKUP_METHODS } from "@/domain/types";
 import { getViewerLocation } from "@/lib/client/location";
 import { BouquetCard } from "@/components/listing/BouquetCard";
+import { BrowseMap } from "@/components/map/lazy";
 import { Chip } from "@/components/ui/Chip";
 import { Select, TextInput } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
+
+type BrowseView = "list" | "map";
+
+const VIEW_STORAGE_KEY = "slf-browse-view";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "distance", label: "Distance" },
@@ -69,6 +74,38 @@ function SortModal({
   );
 }
 
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: BrowseView;
+  onChange: (v: BrowseView) => void;
+}) {
+  return (
+    <div
+      className="inline-flex h-11 shrink-0 rounded-xl border border-line bg-card p-1"
+      role="group"
+      aria-label="Browse view"
+    >
+      {(["list", "map"] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          aria-pressed={view === option}
+          className={`rounded-lg px-3.5 text-sm font-bold capitalize transition-colors ${
+            view === option
+              ? "bg-stem-tint text-stem-deep"
+              : "text-ink-2 hover:text-ink"
+          }`}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function BrowsePage() {
   const [viewer, setViewer] = useState<Coordinates | null>(null);
   const [query, setQuery] = useState("");
@@ -79,11 +116,30 @@ export default function BrowsePage() {
   const [freshOnly, setFreshOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [listings, setListings] = useState<PublicListing[] | null>(null);
+  const [view, setView] = useState<BrowseView>("list");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     void getViewerLocation().then(setViewer);
   }, []);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(VIEW_STORAGE_KEY);
+      if (stored === "list" || stored === "map") setView(stored);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function changeView(next: BrowseView) {
+    setView(next);
+    try {
+      sessionStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
 
   const load = useCallback(async () => {
     const params = new URLSearchParams({ sort });
@@ -138,6 +194,7 @@ export default function BrowsePage() {
               {listings.length} bouquets nearby
             </span>
           )}
+          <ViewToggle view={view} onChange={changeView} />
           <button
             onClick={() => setShowSort(true)}
             className="flex h-11 items-center gap-2 rounded-xl border border-line bg-card px-4 text-sm font-bold text-ink"
@@ -147,14 +204,19 @@ export default function BrowsePage() {
         </div>
       </div>
 
-      <div className="mt-4 lg:mt-0 lg:max-w-[420px]">
-        <TextInput
-          type="search"
-          placeholder="Search roses, tulips, neighborhoods…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search bouquets"
-        />
+      <div className="mt-4 flex items-center gap-3 lg:mt-0 lg:max-w-none">
+        <div className="min-w-0 flex-1 lg:max-w-[420px]">
+          <TextInput
+            type="search"
+            placeholder="Search roses, tulips, neighborhoods…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search bouquets"
+          />
+        </div>
+        <div className="lg:hidden">
+          <ViewToggle view={view} onChange={changeView} />
+        </div>
       </div>
 
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:gap-2.5 lg:pb-7 lg:pt-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -213,6 +275,10 @@ export default function BrowsePage() {
             </Link>
           }
         />
+      ) : view === "map" ? (
+        <div className="mt-4 pb-14 lg:mt-0">
+          <BrowseMap listings={listings} center={viewer} />
+        </div>
       ) : (
         <div className="mt-4 grid grid-cols-1 gap-3 pb-14 min-[400px]:grid-cols-2 md:grid-cols-3 lg:mt-0 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-8">
           {listings.map((listing) => (

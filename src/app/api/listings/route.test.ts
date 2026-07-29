@@ -75,7 +75,7 @@ beforeEach(() => {
 });
 
 describe("GET /api/listings", () => {
-  it("returns active listings without coordinates", async () => {
+  it("returns active listings without coordinates but with mapPoint", async () => {
     const res = await GET(getRequest());
     const data = await res.json();
     expect(res.status).toBe(200);
@@ -83,6 +83,10 @@ describe("GET /api/listings", () => {
     for (const listing of data.listings) {
       expect(listing.status).toBe("active");
       expect(listing.coordinates).toBeUndefined();
+      expect(listing.mapPoint).toEqual({
+        lat: expect.any(Number),
+        lng: expect.any(Number),
+      });
     }
   });
 

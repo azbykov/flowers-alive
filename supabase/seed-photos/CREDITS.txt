@@ -1,0 +1,17 @@
+# Seed photo credits
+
+Demo images in `supabase/seed-photos/` are sourced from Wikimedia Commons
+(and Unsplash originals mirrored there). Uploaded into the public
+`listing-photos` bucket as `seed/*.jpg` by `npm run seed:storage`.
+
+| File | Source |
+| --- | --- |
+| roses.jpg | [Bouquet de roses roses.jpg](https://commons.wikimedia.org/wiki/File:Bouquet_de_roses_roses.jpg) |
+| tulips.jpg | [Yellow-tulip-bouquet-stems (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Yellow-tulip-bouquet-stems_(Unsplash).jpg) |
+| peonies.jpg | [Pink Peony Flower.jpg](https://commons.wikimedia.org/wiki/File:Pink_Peony_Flower.jpg) |
+| mixed.jpg | [Mixed Flower Power.jpg](https://commons.wikimedia.org/wiki/File:Mixed_Flower_Power.jpg) |
+| hydrangeas.jpg | [Blue Hydrangea….jpg](https://commons.wikimedia.org/wiki/File:Blue_Hydrangea_(common_names_hydrangea_or_hortensia).jpg) |
+| sunflowers.jpg | [Sunflower sky backdrop.jpg](https://commons.wikimedia.org/wiki/File:Sunflower_sky_backdrop.jpg) |
+
+Regenerate files: `python3 scripts/download-seed-photos.py`
+Upload to Storage: `npm run seed:storage`

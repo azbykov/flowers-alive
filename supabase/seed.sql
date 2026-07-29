@@ -1,6 +1,7 @@
 -- Demo seed for local Supabase (`supabase db reset`).
--- Amsterdam bouquets with procedurally generated placeholder illustrations
--- placeholder illustrations served by GET /api/placeholder/[flowerType].
+-- Amsterdam bouquets; photo rows point at Storage paths under listing-photos/seed/.
+-- After reset, upload JPEG bytes:  npm run seed:storage
+-- (files live in supabase/seed-photos/; regenerate via scripts/download-seed-photos.py).
 -- Safe to re-run after reset; not applied by `db push` to remote (local only).
 
 create extension if not exists "pgcrypto";
@@ -151,15 +152,26 @@ insert into public.bouquets (id, listing_id, flower_types, color_palette) values
   ('d6666666-6666-6666-6666-666666666666', 'c6666666-6666-6666-6666-666666666666', '{sunflowers}', '{yellow}')
 on conflict (id) do nothing;
 
--- ── Photos (app-relative placeholder route, app-served) ────────────────────
+-- ── Photos (Supabase Storage paths — upload via npm run seed:storage) ──────
+-- Idempotent: replace any previous seed photo rows (old /seed-photos or placeholder paths).
+
+delete from public.photos
+where listing_id in (
+  'c1111111-1111-1111-1111-111111111111',
+  'c2222222-2222-2222-2222-222222222222',
+  'c3333333-3333-3333-3333-333333333333',
+  'c4444444-4444-4444-4444-444444444444',
+  'c5555555-5555-5555-5555-555555555555',
+  'c6666666-6666-6666-6666-666666666666'
+);
 
 insert into public.photos (listing_id, storage_path, position) values
-  ('c1111111-1111-1111-1111-111111111111', '/api/placeholder/roses?seed=c1111111-1111-1111-1111-111111111111&color=pink', 0),
-  ('c2222222-2222-2222-2222-222222222222', '/api/placeholder/tulips?seed=c2222222-2222-2222-2222-222222222222&color=yellow', 0),
-  ('c3333333-3333-3333-3333-333333333333', '/api/placeholder/peonies?seed=c3333333-3333-3333-3333-333333333333&color=pink', 0),
-  ('c4444444-4444-4444-4444-444444444444', '/api/placeholder/mixed?seed=c4444444-4444-4444-4444-444444444444', 0),
-  ('c5555555-5555-5555-5555-555555555555', '/api/placeholder/hydrangeas?seed=c5555555-5555-5555-5555-555555555555&color=blue', 0),
-  ('c6666666-6666-6666-6666-666666666666', '/api/placeholder/sunflowers?seed=c6666666-6666-6666-6666-666666666666', 0);
+  ('c1111111-1111-1111-1111-111111111111', 'seed/roses.jpg', 0),
+  ('c2222222-2222-2222-2222-222222222222', 'seed/tulips.jpg', 0),
+  ('c3333333-3333-3333-3333-333333333333', 'seed/peonies.jpg', 0),
+  ('c4444444-4444-4444-4444-444444444444', 'seed/mixed.jpg', 0),
+  ('c5555555-5555-5555-5555-555555555555', 'seed/hydrangeas.jpg', 0),
+  ('c6666666-6666-6666-6666-666666666666', 'seed/sunflowers.jpg', 0);
 
 -- ── Freshness + analysis ───────────────────────────────────────────────────
 
@@ -177,7 +189,13 @@ insert into public.freshness_reports (
   ('d5555555-5555-5555-5555-555555555555', 55, 1, 2, 72,
    '{some petals papery at edges,heads slightly drooping,stems need a fresh cut}'),
   ('d6666666-6666-6666-6666-666666666666', 90, 5, 7, 85,
-   '{firm petals,strong stems,vivid color}');
+   '{firm petals,strong stems,vivid color}')
+on conflict (bouquet_id) do update set
+  score = excluded.score,
+  remaining_days_min = excluded.remaining_days_min,
+  remaining_days_max = excluded.remaining_days_max,
+  confidence = excluded.confidence,
+  signals = excluded.signals;
 
 insert into public.bouquet_analyses (
   bouquet_id, model, flowers, damage_notes, photo_quality, listing_quality, suggestions
@@ -208,7 +226,25 @@ insert into public.bouquet_analyses (
     '[{"type":"hydrangeas","name":"Hydrangeas","count":3}]',
     '{drooping on one head}', 'good', 'average',
     '{Flowers appear partially wilted — a fresh stem cut may help before handover.}'
-  );
+  )
+on conflict (bouquet_id) do update set
+  model = excluded.model,
+  flowers = excluded.flowers,
+  damage_notes = excluded.damage_notes,
+  photo_quality = excluded.photo_quality,
+  listing_quality = excluded.listing_quality,
+  suggestions = excluded.suggestions;
+
+-- History: avoid duplicates on re-seed
+delete from public.listing_history
+where listing_id in (
+  'c1111111-1111-1111-1111-111111111111',
+  'c2222222-2222-2222-2222-222222222222',
+  'c3333333-3333-3333-3333-333333333333',
+  'c4444444-4444-4444-4444-444444444444',
+  'c5555555-5555-5555-5555-555555555555',
+  'c6666666-6666-6666-6666-666666666666'
+);
 
 insert into public.listing_history (listing_id, event, created_at) values
   ('c1111111-1111-1111-1111-111111111111', 'created', now() - interval '3 hours'),

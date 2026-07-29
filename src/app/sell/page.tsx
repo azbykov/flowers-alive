@@ -23,6 +23,7 @@ import { removeListingPhotos, uploadListingPhotos } from "@/lib/client/storage";
 import { config } from "@/lib/config";
 import { freshColor } from "@/components/listing/freshness";
 import { PhotoUpload, type PhotoItem } from "@/components/listing/PhotoUpload";
+import { PickupMapPicker } from "@/components/map/lazy";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Field, TextArea, TextInput } from "@/components/ui/Field";
@@ -94,6 +95,7 @@ export default function SellPage() {
   const [publishError, setPublishError] = useState("");
   const [published, setPublished] = useState<PublicListing | null>(null);
   const prefilled = useRef(false);
+  const geocodeDebounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     // Hydration-safe prefill from profile — must run after mount.
@@ -172,6 +174,18 @@ export default function SellPage() {
         err instanceof Error ? err.message : "Could not detect your location.",
       );
     }
+  }
+
+  function onPickupPinChange(coords: Coordinates) {
+    setCoordinates(coords);
+    clearTimeout(geocodeDebounce.current);
+    geocodeDebounce.current = setTimeout(() => {
+      void resolveSellerNeighborhood(coords)
+        .then((area) => setNeighborhood(area))
+        .catch(() => {
+          /* keep editable label; pin position is what matters for distance */
+        });
+    }, 400);
   }
 
   function goToDetails() {
@@ -631,7 +645,19 @@ export default function SellPage() {
                 </Button>
               </div>
             )}
-            {locationStatus === "ready" && (
+            {locationStatus === "ready" && coordinates && (
+              <>
+                <PickupMapPicker
+                  coordinates={coordinates}
+                  onChange={onPickupPinChange}
+                />
+                <p className="mt-1.5 text-xs text-faint">
+                  Drag the pin to your pickup spot. Buyers see your neighborhood,
+                  distance, and an approximate area — never your exact address.
+                </p>
+              </>
+            )}
+            {locationStatus === "ready" && !coordinates && (
               <p className="mt-1.5 text-xs text-faint">
                 Buyers see your neighborhood &amp; distance — never your exact
                 address. You can edit the label above.

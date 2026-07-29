@@ -64,11 +64,13 @@ Supabase + Vercel and a smoke test on real hardware (see provisioning.md).
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=     # Maps JavaScript API
 AI_GATEWAY_API_KEY=                 # preferred
 OPENAI_API_KEY=                     # optional fallback
 ```
 
-No service-role key — Route Handlers use the user's session so RLS applies.
+No service-role key in Vercel — Route Handlers use the user's session so RLS applies.
+`SUPABASE_SERVICE_ROLE_KEY` is local/CLI only (seed storage uploads).
 
 ### What we deliberately do **not** deploy yet
 

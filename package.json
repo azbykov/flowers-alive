@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:storage": "node scripts/seed-storage-photos.mjs",
+    "seed:storage:remote": "node scripts/seed-storage-photos.mjs --remote",
+    "db:reset": "supabase db reset && npm run seed:storage"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.0",
+    "@vis.gl/react-google-maps": "^1.9.0",
     "next": "16.2.10",
     "openai": "^6.45.0",
     "react": "19.2.4",
@@ -20,6 +24,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/google.maps": "^3.65.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
