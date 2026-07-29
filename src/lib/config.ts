@@ -8,9 +8,15 @@ export const config = {
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
   aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
+  googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+  /** Optional Cloud Map ID for Advanced Markers; falls back to DEMO_MAP_ID. */
+  googleMapsMapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? "",
 
   get hasSupabase(): boolean {
     return Boolean(this.supabaseUrl && this.supabaseAnonKey);
+  },
+  get hasGoogleMaps(): boolean {
+    return Boolean(this.googleMapsApiKey);
   },
   /** Prefer Vercel AI Gateway; fall back to a direct OpenAI key. */
   get hasAiGateway(): boolean {

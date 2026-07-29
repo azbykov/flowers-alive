@@ -10,13 +10,28 @@ Under a minute.
 npm install
 supabase start
 # Copy NEXT_PUBLIC_SUPABASE_URL and anon key from `supabase status` into .env
-supabase db reset   # migrations + seed listings (Amsterdam)
+npm run db:reset   # migrations + seed listings + Storage photos
 npm run dev
 ```
 
 Open http://localhost:3000. **Supabase is required** for browse, auth, and sell.
-Local listings come from `supabase/seed.sql` after `db reset`. Without AI keys,
-vision analysis uses a deterministic mock provider.
+Local listings come from `supabase/seed.sql` after reset; JPEGs upload into
+Storage bucket `listing-photos` as `seed/*.jpg` (`npm run seed:storage`).
+For a **cloud** project, put keys in `.env` then:
+
+```bash
+npm run seed:storage:remote
+```
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_REF.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ…   # Dashboard → Settings → API (never commit / never Vercel client)
+```
+
+Service role is CLI/local only. Bucket `listing-photos` must already exist
+(migration `0003`). Seed SQL is local-only by default — apply listing/photo
+rows on remote separately if you need them.
+Without AI keys, vision analysis uses a deterministic mock provider.
 
 ## Production services
 
@@ -25,6 +40,7 @@ Copy `.env.example` to `.env.local` and fill in:
 | Variable | Enables |
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Postgres, Auth, Storage |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Browse / detail / sell maps (Maps JavaScript API) |
 | `AI_GATEWAY_API_KEY` | Real vision via [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) (preferred) |
 | `OPENAI_API_KEY` | Direct OpenAI fallback when Gateway is unset |
 
@@ -49,7 +65,8 @@ Short checklist: [docs/production-roadmap.md](docs/production-roadmap.md).
   freshness card; contact reveal; mark-as-sold for owners.
 - **Favorites & profile** — saved bouquets (device-local), my listings, sign out.
 - **Privacy** — precise coordinates stay server-side under RLS; buyers see
-  neighborhood + distance rounded to 0.1 km, never an address.
+  neighborhood + distance rounded to 0.1 km + approximate map area, never an
+  address. Browse has List | Map (Google Maps).
 
 ## Repo map
 

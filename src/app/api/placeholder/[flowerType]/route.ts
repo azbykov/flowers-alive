@@ -5,9 +5,10 @@ import { renderBouquetSvg } from "@/lib/placeholder/renderBouquetSvg";
 type Context = { params: Promise<{ flowerType: string }> };
 
 /**
- * On-demand bouquet placeholder illustration, used by demo/seed listings that
- * have no real photo. `?seed=` picks the variant (shape layout + colors);
- * pass a stable id (e.g. the listing id) so the image never changes.
+ * On-demand bouquet SVG placeholder (fallback when a listing has no real photo).
+ * Local seed listings use Storage paths `seed/*.jpg` (see `npm run seed:storage`).
+ * `?seed=` picks the variant (shape layout + colors); pass a stable id
+ * (e.g. the listing id) so the image never changes.
  */
 export async function GET(request: NextRequest, context: Context) {
   const { flowerType: raw } = await context.params;

@@ -6,7 +6,7 @@ import type {
   SortKey,
 } from "./types";
 import { FLOWER_LABELS } from "./types";
-import { approximateDistanceKm } from "./geo";
+import { approximateDistanceKm, toApproximateMapPoint } from "./geo";
 
 export function toPublicListing(
   listing: Listing,
@@ -15,6 +15,7 @@ export function toPublicListing(
   const { coordinates, ...safe } = listing;
   return {
     ...safe,
+    mapPoint: toApproximateMapPoint(coordinates),
     distanceKm: viewer ? approximateDistanceKm(viewer, coordinates) : null,
   };
 }

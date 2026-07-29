@@ -39,6 +39,13 @@ describe("toPublicListing", () => {
     expect((pub.distanceKm! * 10) % 1).toBe(0);
   });
 
+  it("exposes approximate mapPoint instead of exact coordinates", () => {
+    const exact = { lat: 52.37391, lng: 4.88094 };
+    const pub = toPublicListing(listing({ coordinates: exact }), null);
+    expect(pub.mapPoint).toEqual({ lat: 52.374, lng: 4.881 });
+    expect(pub.mapPoint).not.toEqual(exact);
+  });
+
   it("returns null distance without viewer location", () => {
     expect(toPublicListing(listing({}), null).distanceKm).toBeNull();
   });

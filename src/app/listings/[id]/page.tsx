@@ -11,6 +11,7 @@ import { getViewerLocation } from "@/lib/client/location";
 import { useAuthProfile } from "@/lib/client/profile";
 import { FreshnessCard } from "@/components/listing/FreshnessCard";
 import { FavoriteButton } from "@/components/listing/FavoriteButton";
+import { ApproximateMap } from "@/components/map/lazy";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -234,6 +235,16 @@ export default function ListingPage({
               </p>
             </div>
           )}
+
+          <div>
+            <h2 className="font-display text-[20px] font-medium">Pickup area</h2>
+            <div className="mt-2">
+              <ApproximateMap
+                mapPoint={listing.mapPoint}
+                neighborhood={listing.neighborhood}
+              />
+            </div>
+          </div>
 
           <div className="flex items-center gap-3.5 rounded-2xl border border-line bg-card p-4">
             <span

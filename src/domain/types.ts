@@ -87,9 +87,13 @@ export interface Listing {
   soldAt: string | null;
 }
 
-/** Listing as exposed publicly: coordinates replaced by approximate distance. */
+/**
+ * Listing as exposed publicly: exact coordinates stripped.
+ * `mapPoint` is a ~100 m grid snap for browse/detail maps only.
+ */
 export type PublicListing = Omit<Listing, "coordinates"> & {
   distanceKm: number | null;
+  mapPoint: Coordinates;
 };
 
 export type SortKey = "distance" | "freshness" | "newest" | "price";
