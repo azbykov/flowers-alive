@@ -10,7 +10,7 @@ function listing(
 ): PublicListing {
   return {
     id,
-    seller: { id: "s", displayName: "S", contact: "@s" },
+    seller: { id: "s", displayName: "S", avatarUrl: "", phone: "", telegram: "seller", whatsapp: "" },
     title: id,
     description: "",
     priceCents,

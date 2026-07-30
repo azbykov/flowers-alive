@@ -5,7 +5,7 @@ import type { Listing, PublicListing } from "./types";
 function listing(overrides: Partial<Listing>): Listing {
   return {
     id: "l1",
-    seller: { id: "u1", displayName: "Test", contact: "@test" },
+    seller: { id: "u1", displayName: "Test", avatarUrl: "", phone: "", telegram: "tester", whatsapp: "" },
     title: "Red roses",
     description: "Lovely",
     priceCents: 500,

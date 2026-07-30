@@ -1,20 +1,48 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  legacyContactLabel,
+  normalizePhone,
+  normalizeTelegram,
+  resolveContacts,
+  type ContactChannels,
+} from "@/domain/contacts";
 import { config } from "@/lib/config";
 
 /** Identity + editable profile from Supabase Auth + profiles table. */
 
-export interface Profile {
+export interface Profile extends ContactChannels {
   id: string;
   displayName: string;
-  contact: string;
+  email: string;
+  /** Google / OAuth picture URL when available. */
+  avatarUrl: string;
 }
 
 const CHANGE_EVENT = "slf:profile-changed";
-const SERVER_SNAPSHOT: Profile = { id: "server", displayName: "", contact: "" };
+const SERVER_SNAPSHOT: Profile = {
+  id: "server",
+  displayName: "",
+  email: "",
+  avatarUrl: "",
+  phone: "",
+  telegram: "",
+  whatsapp: "",
+};
 
 let cache: Profile | null = null;
+
+function oauthAvatarUrl(user: {
+  user_metadata?: Record<string, unknown> | null;
+}): string {
+  const meta = user.user_metadata ?? {};
+  const raw =
+    (typeof meta.avatar_url === "string" && meta.avatar_url) ||
+    (typeof meta.picture === "string" && meta.picture) ||
+    "";
+  return raw.trim();
+}
 
 export function getProfile(): Profile {
   if (typeof window === "undefined") return SERVER_SNAPSHOT;
@@ -22,10 +50,21 @@ export function getProfile(): Profile {
 }
 
 export function saveProfile(
-  update: Pick<Profile, "displayName" | "contact">,
+  update: Partial<
+    Pick<
+      Profile,
+      "displayName" | "phone" | "telegram" | "whatsapp" | "avatarUrl"
+    >
+  >,
 ): Profile {
   const current = cache ?? SERVER_SNAPSHOT;
-  const next = { ...current, ...update };
+  const next: Profile = {
+    ...current,
+    ...update,
+    phone: normalizePhone(update.phone ?? current.phone),
+    telegram: normalizeTelegram(update.telegram ?? current.telegram),
+    whatsapp: normalizePhone(update.whatsapp ?? current.whatsapp),
+  };
   cache = next;
   window.dispatchEvent(new Event(CHANGE_EVENT));
   void persistProfileToSupabase(next);
@@ -36,10 +75,19 @@ async function persistProfileToSupabase(profile: Profile) {
   if (!profile.id || profile.id === "server") return;
   const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();
+  const channels = {
+    phone: profile.phone,
+    telegram: profile.telegram,
+    whatsapp: profile.whatsapp,
+  };
   await supabase.from("profiles").upsert({
     id: profile.id,
     display_name: profile.displayName,
-    contact: profile.contact,
+    phone: channels.phone,
+    telegram: channels.telegram,
+    whatsapp: channels.whatsapp,
+    contact: legacyContactLabel(channels),
+    avatar_url: profile.avatarUrl,
   });
 }
 
@@ -90,22 +138,43 @@ export function useAuthProfile(): {
     }
     const { data: row } = await supabase
       .from("profiles")
-      .select("display_name, contact")
+      .select("display_name, contact, phone, telegram, whatsapp, avatar_url")
       .eq("id", user.id)
       .maybeSingle();
     const metadataName =
       (user.user_metadata?.full_name as string | undefined) ??
       (user.user_metadata?.name as string | undefined) ??
       "";
+    const channels = resolveContacts({
+      phone: row?.phone,
+      telegram: row?.telegram,
+      whatsapp: row?.whatsapp,
+      contact: row?.contact,
+    });
+    const fromOauth = oauthAvatarUrl(user);
+    const avatarUrl = fromOauth || (row?.avatar_url ?? "").trim();
+    const displayName = row?.display_name || metadataName;
     const next: Profile = {
       id: user.id,
-      displayName: row?.display_name ?? metadataName,
-      contact: row?.contact ?? "",
+      displayName,
+      email: user.email ?? "",
+      avatarUrl,
+      ...channels,
     };
-    if (!row && metadataName) {
+    // Create/update row so Google name + avatar persist for listing cards.
+    if (
+      !row ||
+      (fromOauth && row.avatar_url !== fromOauth) ||
+      (!row.display_name && metadataName)
+    ) {
       await supabase.from("profiles").upsert({
         id: user.id,
-        display_name: metadataName,
+        display_name: displayName || "Neighbor",
+        avatar_url: avatarUrl,
+        phone: channels.phone,
+        telegram: channels.telegram,
+        whatsapp: channels.whatsapp,
+        contact: legacyContactLabel(channels),
       });
     }
     cache = next;

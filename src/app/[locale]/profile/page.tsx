@@ -2,26 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import type { PublicListing } from "@/domain/types";
+import { hasAnyContact } from "@/domain/contacts";
 import { formatPrice, timeAgo } from "@/domain/format";
 import { config } from "@/lib/config";
-import { saveProfile, useAuthProfile } from "@/lib/client/profile";
+import { getFavoriteIds } from "@/lib/client/favorites";
+import { useAuthProfile } from "@/lib/client/profile";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
-import { Field, TextInput } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 export default function ProfilePage() {
   const t = useTranslations("Profile");
   const locale = useLocale();
+  const router = useRouter();
   const { profile, loading, signedIn, signOut } = useAuthProfile();
-  const [nameEdit, setNameEdit] = useState<string | null>(null);
-  const [contactEdit, setContactEdit] = useState<string | null>(null);
-  const displayName = nameEdit ?? profile.displayName;
-  const contact = contactEdit ?? profile.contact;
-  const [saved, setSaved] = useState(false);
   const [mine, setMine] = useState<PublicListing[]>([]);
+  const [savedCount, setSavedCount] = useState(0);
 
   useEffect(() => {
     if (!signedIn || profile.id === "server") return;
@@ -29,6 +28,17 @@ export default function ProfilePage() {
       .then((res) => res.json())
       .then((data: { listings: PublicListing[] }) => setMine(data.listings));
   }, [signedIn, profile.id]);
+
+  useEffect(() => {
+    setSavedCount(getFavoriteIds().length);
+    const onChange = () => setSavedCount(getFavoriteIds().length);
+    window.addEventListener("slf:favorites-changed", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("slf:favorites-changed", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
 
   async function markSold(id: string) {
     const res = await fetch(`/api/listings/${id}`, {
@@ -40,6 +50,11 @@ export default function ProfilePage() {
       const data = (await res.json()) as { listing: PublicListing };
       setMine((prev) => prev.map((l) => (l.id === id ? data.listing : l)));
     }
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    router.replace("/");
   }
 
   if (loading) {
@@ -81,54 +96,103 @@ export default function ProfilePage() {
     );
   }
 
+  const displayName = profile.displayName.trim() || t("unnamed");
+  const listed = mine.filter((l) => l.status === "active").length;
+  const given = mine.filter((l) => l.status === "sold").length;
+  const contacts = {
+    phone: profile.phone,
+    telegram: profile.telegram,
+    whatsapp: profile.whatsapp,
+  };
+  const contactFilled = hasAnyContact(contacts);
+
+  const contactLines: string[] = [];
+  if (profile.phone) contactLines.push(t("phoneValue", { value: profile.phone }));
+  if (profile.telegram)
+    contactLines.push(t("telegramValue", { value: `@${profile.telegram}` }));
+  if (profile.whatsapp)
+    contactLines.push(t("whatsappValue", { value: profile.whatsapp }));
+
+  const menu = [
+    { href: "/profile/edit" as const, label: t("editProfile"), icon: "✎" },
+    { href: "/favorites" as const, label: t("menuSaved"), icon: "♥" },
+  ];
+
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-6 lg:max-w-[752px] lg:pt-11">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-medium tracking-tight lg:text-[28px]">
-            {t("title")}
-          </h1>
-          <p className="mt-1 text-[13px] text-ink-soft">{t("subtitle")}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <LanguageSwitcher />
-          {signedIn && (
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="rounded-full border border-line px-3 py-1.5 text-[13px] font-medium text-ink-soft hover:border-stem/40"
-            >
-              {t("signOut")}
-            </button>
-          )}
-        </div>
+    <main className="mx-auto max-w-2xl px-4 pb-10 pt-6 lg:max-w-[752px] lg:pt-11">
+      <div className="flex justify-end">
+        <LanguageSwitcher />
       </div>
 
-      <div className="mt-4 space-y-4">
-        <Field label={t("name")}>
-          <TextInput
-            value={displayName}
-            onChange={(e) => setNameEdit(e.target.value)}
-            placeholder={t("namePlaceholder")}
-          />
-        </Field>
-        <Field label={t("contact")}>
-          <TextInput
-            value={contact}
-            onChange={(e) => setContactEdit(e.target.value)}
-            placeholder={t("contactPlaceholder")}
-          />
-        </Field>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            saveProfile({ displayName, contact });
-            setSaved(true);
-            setTimeout(() => setSaved(false), 1500);
-          }}
-        >
-          {saved ? t("saved") : t("save")}
-        </Button>
+      <div className="mt-2 text-center">
+        <UserAvatar
+          name={displayName}
+          src={profile.avatarUrl}
+          size="xl"
+          className="mx-auto"
+        />
+        <h1 className="mt-3 font-display text-[23px] font-medium tracking-tight text-ink">
+          {displayName}
+        </h1>
+        {profile.email && (
+          <p className="mt-1 text-[13px] text-ink-soft">{profile.email}</p>
+        )}
+      </div>
+
+      <div className="mt-5 flex overflow-hidden rounded-2xl border border-line bg-card">
+        {[
+          { n: listed, label: t("statListed") },
+          { n: given, label: t("statGiven") },
+          { n: savedCount, label: t("statSaved") },
+        ].map((stat, i) => (
+          <div
+            key={stat.label}
+            className={`flex-1 py-4 text-center ${i < 2 ? "border-r border-line" : ""}`}
+          >
+            <div className="font-mono text-[22px] font-bold text-ink">{stat.n}</div>
+            <div className="mt-0.5 text-[12px] text-ink-soft">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-2xl border border-line bg-card">
+        <div className="border-b border-line px-4 py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[13px] font-semibold uppercase tracking-wide text-ink-soft">
+              {t("contacts")}
+            </span>
+            <Link
+              href="/profile/edit"
+              className="text-[13px] font-semibold text-stem hover:underline"
+            >
+              {t("edit")}
+            </Link>
+          </div>
+          {contactFilled ? (
+            <ul className="mt-2 space-y-1 text-[15px] text-ink">
+              {contactLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-[14px] text-ink-soft">{t("contactsEmpty")}</p>
+          )}
+        </div>
+        {menu.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex items-center gap-3.5 border-b border-line px-4 py-4 last:border-b-0 hover:bg-surface-tint/60"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-surface-tint text-base">
+              {item.icon}
+            </span>
+            <span className="flex-1 text-[15px] font-semibold text-ink">
+              {item.label}
+            </span>
+            <span className="text-lg text-ink-soft">›</span>
+          </Link>
+        ))}
       </div>
 
       <h2 className="mt-8 font-display text-[20px] font-medium">
@@ -172,6 +236,7 @@ export default function ProfilePage() {
               </div>
               {listing.status === "active" ? (
                 <button
+                  type="button"
                   onClick={() => void markSold(listing.id)}
                   className="shrink-0 rounded-full border border-line px-3 py-1.5 text-[13px] font-medium text-ink-soft hover:border-stem/40"
                 >
@@ -186,6 +251,17 @@ export default function ProfilePage() {
           ))}
         </ul>
       )}
+
+      <div className="mt-8">
+        <Button
+          fullWidth
+          variant="secondary"
+          className="!h-[52px] !rounded-[14px] !border-line !text-petal hover:!border-petal/40"
+          onClick={() => void handleSignOut()}
+        >
+          {t("signOut")}
+        </Button>
+      </div>
     </main>
   );
 }

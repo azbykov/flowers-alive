@@ -1,4 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  legacyContactLabel,
+  normalizePhone,
+  normalizeTelegram,
+  resolveContacts,
+} from "@/domain/contacts";
 import type {
   BouquetAnalysis,
   FlowerType,
@@ -19,7 +25,7 @@ import type { ListingRepository } from "./repo";
 const LISTING_SELECT = `
   id, title, description, price_cents, currency, pickup_methods, status,
   created_at, sold_at,
-  profiles:seller_id ( id, display_name, contact ),
+  profiles:seller_id ( id, display_name, contact, phone, telegram, whatsapp, avatar_url ),
   locations:location_id ( neighborhood, lat, lng ),
   photos ( id, storage_path, position ),
   bouquets (
@@ -47,12 +53,19 @@ function rowToListing(row: any): Listing {
   const bouquet = Array.isArray(row.bouquets) ? row.bouquets[0] : row.bouquets;
   const analysis = bouquet?.bouquet_analyses?.[0] ?? bouquet?.bouquet_analyses;
   const fresh = bouquet?.freshness_reports?.[0] ?? bouquet?.freshness_reports;
+  const channels = resolveContacts({
+    phone: row.profiles.phone,
+    telegram: row.profiles.telegram,
+    whatsapp: row.profiles.whatsapp,
+    contact: row.profiles.contact,
+  });
   return {
     id: row.id,
     seller: {
       id: row.profiles.id,
       displayName: row.profiles.display_name,
-      contact: row.profiles.contact,
+      avatarUrl: (row.profiles.avatar_url ?? "").trim(),
+      ...channels,
     },
     title: row.title,
     description: row.description,
@@ -130,12 +143,20 @@ export function createSupabaseRepo(sb: SupabaseClient): ListingRepository {
     },
 
     async create(input: CreateListingInput, sellerId: string) {
+      const channels = {
+        phone: normalizePhone(input.sellerPhone),
+        telegram: normalizeTelegram(input.sellerTelegram),
+        whatsapp: normalizePhone(input.sellerWhatsapp),
+      };
       // Ensure the profile row exists (first publish after magic-link sign-in).
       const { error: profileErr } = await sb.from("profiles").upsert(
         {
           id: sellerId,
           display_name: input.sellerName,
-          contact: input.sellerContact,
+          phone: channels.phone,
+          telegram: channels.telegram,
+          whatsapp: channels.whatsapp,
+          contact: legacyContactLabel(channels),
         },
         { onConflict: "id" },
       );

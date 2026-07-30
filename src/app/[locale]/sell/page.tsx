@@ -12,6 +12,7 @@ import type {
   PublicListing,
 } from "@/domain/types";
 import { FLOWER_TYPES, PICKUP_METHODS } from "@/domain/types";
+import { hasAnyContact, normalizeTelegram } from "@/domain/contacts";
 import { APP_CURRENCY } from "@/domain/currency";
 import { formatPrice } from "@/domain/format";
 import { remainingDaysLabel } from "@/domain/freshness";
@@ -73,7 +74,9 @@ export default function SellPage() {
   const [flowerTypes, setFlowerTypes] = useState<FlowerType[]>(["other"]);
   const [pickup, setPickup] = useState<PickupMethod[]>(["meet"]);
   const [sellerName, setSellerName] = useState("");
-  const [sellerContact, setSellerContact] = useState("");
+  const [sellerPhone, setSellerPhone] = useState("");
+  const [sellerTelegram, setSellerTelegram] = useState("");
+  const [sellerWhatsapp, setSellerWhatsapp] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [published, setPublished] = useState<PublicListing | null>(null);
@@ -99,9 +102,18 @@ export default function SellPage() {
   useEffect(() => {
     // Hydration-safe prefill from profile — must run after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSellerName(authProfile.displayName || getProfile().displayName);
-    setSellerContact(authProfile.contact || getProfile().contact);
-  }, [authProfile.displayName, authProfile.contact]);
+    const fromAuth = authProfile.id !== "server" ? authProfile : getProfile();
+    setSellerName(fromAuth.displayName);
+    setSellerPhone(fromAuth.phone);
+    setSellerTelegram(fromAuth.telegram ? `@${fromAuth.telegram}` : "");
+    setSellerWhatsapp(fromAuth.whatsapp);
+  }, [
+    authProfile.id,
+    authProfile.displayName,
+    authProfile.phone,
+    authProfile.telegram,
+    authProfile.whatsapp,
+  ]);
 
   // Analysis starts as soon as photos change — the analyzing screen usually
   // just catches up with a request that is already in flight.
@@ -227,7 +239,15 @@ export default function SellPage() {
     }
     setPublishing(true);
     setPublishError("");
-    saveProfile({ displayName: sellerName, contact: sellerContact });
+    const phone = sellerPhone.trim();
+    const telegram = normalizeTelegram(sellerTelegram);
+    const whatsapp = sellerWhatsapp.trim();
+    saveProfile({
+      displayName: sellerName,
+      phone,
+      telegram,
+      whatsapp,
+    });
 
     let uploadedPaths: string[] = [];
     try {
@@ -254,7 +274,9 @@ export default function SellPage() {
           coordinates,
           pickupMethods: pickup,
           sellerName,
-          sellerContact,
+          sellerPhone: phone,
+          sellerTelegram: telegram,
+          sellerWhatsapp: whatsapp,
           freshness: ai?.freshness ?? null,
           analysis: ai?.analysis ?? null,
         }),
@@ -296,7 +318,11 @@ export default function SellPage() {
     title.trim().length >= 3 &&
     Number(price) > 0 &&
     sellerName.trim().length > 0 &&
-    sellerContact.trim().length >= 3 &&
+    hasAnyContact({
+      phone: sellerPhone,
+      telegram: normalizeTelegram(sellerTelegram),
+      whatsapp: sellerWhatsapp,
+    }) &&
     neighborhood.trim().length >= 2 &&
     coordinates !== null &&
     flowerTypes.length > 0;
@@ -679,13 +705,35 @@ export default function SellPage() {
               placeholder={t("namePlaceholder")}
             />
           </Field>
-          <Field label={t("contact")}>
+          <Field label={t("phone")}>
             <TextInput
-              value={sellerContact}
-              onChange={(e) => setSellerContact(e.target.value)}
-              placeholder={t("contactPlaceholder")}
+              type="tel"
+              value={sellerPhone}
+              onChange={(e) => setSellerPhone(e.target.value)}
+              placeholder={t("phonePlaceholder")}
             />
           </Field>
+          <Field label={t("telegram")}>
+            <TextInput
+              value={sellerTelegram}
+              onChange={(e) => setSellerTelegram(e.target.value)}
+              placeholder={t("telegramPlaceholder")}
+            />
+          </Field>
+          <Field label={t("whatsapp")}>
+            <TextInput
+              type="tel"
+              value={sellerWhatsapp}
+              onChange={(e) => setSellerWhatsapp(e.target.value)}
+              placeholder={t("whatsappPlaceholder")}
+            />
+          </Field>
+          <p className="text-[13px] text-ink-soft">
+            {t("contactHint")}{" "}
+            <Link href="/profile/edit" className="font-semibold text-stem">
+              {t("editInProfile")}
+            </Link>
+          </p>
           <Button
             fullWidth
             className="!mt-6 !h-14 !rounded-2xl !text-base"

@@ -58,15 +58,19 @@ from auth.users u
 where u.email like '%@seed.local'
 on conflict do nothing;
 
-insert into public.profiles (id, display_name, contact) values
-  ('a1111111-1111-1111-1111-111111111111', 'ნინო',  '@nino_tbs'),
-  ('a2222222-2222-2222-2222-222222222222', 'გიორგი', '+995 555 12 34 56'),
-  ('a3333333-3333-3333-3333-333333333333', 'მარიამი', '@mariam_flwr'),
-  ('a4444444-4444-4444-4444-444444444444', 'ლუკა',   '+995 555 98 76 54'),
-  ('a5555555-5555-5555-5555-555555555555', 'ანა', '@ana_vake'),
-  ('a6666666-6666-6666-6666-666666666666', 'დათო',  '+995 555 24 68 13')
+insert into public.profiles (id, display_name, contact, phone, telegram, whatsapp) values
+  ('a1111111-1111-1111-1111-111111111111', 'ნინო',  '@nino_tbs', '', 'nino_tbs', ''),
+  ('a2222222-2222-2222-2222-222222222222', 'გიორგი', '+995 555 12 34 56', '+995 555 12 34 56', '', '+995 555 12 34 56'),
+  ('a3333333-3333-3333-3333-333333333333', 'მარიამი', '@mariam_flwr', '', 'mariam_flwr', ''),
+  ('a4444444-4444-4444-4444-444444444444', 'ლუკა',   '+995 555 98 76 54', '+995 555 98 76 54', '', ''),
+  ('a5555555-5555-5555-5555-555555555555', 'ანა', '@ana_vake', '', 'ana_vake', ''),
+  ('a6666666-6666-6666-6666-666666666666', 'დათო',  '+995 555 24 68 13', '+995 555 24 68 13', '', '+995 555 24 68 13')
 on conflict (id) do update
-  set display_name = excluded.display_name, contact = excluded.contact;
+  set display_name = excluded.display_name,
+      contact = excluded.contact,
+      phone = excluded.phone,
+      telegram = excluded.telegram,
+      whatsapp = excluded.whatsapp;
 
 -- ── Locations (Tbilisi neighborhoods) ──────────────────────────────────────
 

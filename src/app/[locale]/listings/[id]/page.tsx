@@ -11,18 +11,12 @@ import { useAuthProfile } from "@/lib/client/profile";
 import { FreshnessCard } from "@/components/listing/FreshnessCard";
 import { FavoriteButton } from "@/components/listing/FavoriteButton";
 import { ApproximateMap } from "@/components/map/lazy";
+import { SellerContactReveal } from "@/components/listing/SellerContactReveal";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
-
-const AVATAR_COLORS = ["#c2557a", "#d98324", "#6d9a4f", "#7c68ad", "#b23b4e"];
-
-function avatarColor(name: string): string {
-  let sum = 0;
-  for (const ch of name) sum += ch.charCodeAt(0);
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
-}
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 export default function ListingPage({
   params,
@@ -106,10 +100,13 @@ export default function ListingPage({
       {t("markSold")}
     </Button>
   ) : showContact ? (
-    <div className="flex-1 rounded-2xl bg-stem-tint px-4 py-3 text-center">
-      <span className="text-[13px] text-ink-soft">{t("reachSeller")} </span>
-      <span className="font-semibold">{seller.contact}</span>
-    </div>
+    <SellerContactReveal
+      seller={seller}
+      reachLabel={t("reachSeller")}
+      phoneLabel={t("channelPhone")}
+      telegramLabel={t("channelTelegram")}
+      whatsappLabel={t("channelWhatsapp")}
+    />
   ) : (
     <Button
       fullWidth
@@ -259,12 +256,12 @@ export default function ListingPage({
           </div>
 
           <div className="flex items-center gap-3.5 rounded-2xl border border-line bg-card p-4">
-            <span
-              className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white"
-              style={{ background: avatarColor(sellerName) }}
-            >
-              {sellerName.charAt(0).toUpperCase()}
-            </span>
+            <UserAvatar
+              name={sellerName}
+              src={seller.avatarUrl}
+              size="md"
+              className="shrink-0"
+            />
             <div className="flex-1">
               <div className="text-base font-bold">{sellerName}</div>
               <div className="text-[13px] text-ink-soft">{t("arrangePickup")}</div>

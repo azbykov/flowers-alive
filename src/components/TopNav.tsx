@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useAuthProfile } from "@/lib/client/profile";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 /** Desktop shell (≥lg) from the desktop handoff; mobile keeps the bottom nav. */
 export function TopNav() {
@@ -11,7 +12,7 @@ export function TopNav() {
   const tBrand = useTranslations("Brand");
   const pathname = usePathname();
   const { profile, signedIn, loading } = useAuthProfile();
-  const initial = profile.displayName.trim().charAt(0).toUpperCase() || "✿";
+  const displayName = profile.displayName.trim() || "✿";
 
   const NAV_ITEMS = [
     { href: "/", label: t("browse") },
@@ -99,9 +100,13 @@ export function TopNav() {
             <Link
               href="/profile"
               aria-label={t("profile")}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-stem to-stem-deep font-display text-[17px] text-white"
+              className="block"
             >
-              {initial}
+              <UserAvatar
+                name={displayName}
+                src={signedIn ? profile.avatarUrl : undefined}
+                size="sm"
+              />
             </Link>
           )}
         </div>

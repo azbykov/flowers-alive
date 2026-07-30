@@ -26,7 +26,10 @@ export function createTestRepo(initial: Listing[] = []): ListingRepository {
         seller: {
           id: sellerId,
           displayName: input.sellerName,
-          contact: input.sellerContact,
+          avatarUrl: "",
+          phone: input.sellerPhone,
+          telegram: input.sellerTelegram,
+          whatsapp: input.sellerWhatsapp,
         },
         title: input.title,
         description: input.description,

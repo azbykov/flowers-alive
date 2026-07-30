@@ -63,8 +63,14 @@ export interface BouquetAnalysis {
 export interface Seller {
   id: string;
   displayName: string;
-  /** Phone / telegram — revealed only when a buyer taps "Contact seller". */
-  contact: string;
+  /** Google / OAuth picture when available; empty otherwise. */
+  avatarUrl: string;
+  /** Revealed only when a buyer taps "Contact seller". */
+  phone: string;
+  /** Telegram username without @. */
+  telegram: string;
+  /** Phone number used for WhatsApp (wa.me). */
+  whatsapp: string;
 }
 
 export interface Listing {

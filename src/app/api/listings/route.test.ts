@@ -6,7 +6,7 @@ import { GET, POST } from "./route";
 
 const seedListing: Listing = {
   id: "seed-tulips",
-  seller: { id: "seller-1", displayName: "Jesse", contact: "@jesse" },
+  seller: { id: "seller-1", displayName: "Jesse", avatarUrl: "", phone: "", telegram: "jesse", whatsapp: "" },
   title: "Bright yellow tulips",
   description: "From the market",
   priceCents: 500,
@@ -53,7 +53,9 @@ const validListing = {
   coordinates: { lat: 52.3547, lng: 4.8921 },
   pickupMethods: ["meet"],
   sellerName: "Test",
-  sellerContact: "@test",
+  sellerPhone: "",
+  sellerTelegram: "tester",
+  sellerWhatsapp: "",
   freshness: null,
   analysis: null,
 };
